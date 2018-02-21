@@ -400,5 +400,21 @@ namespace fesapiGenerator
             else
                 return proc.MainWindowHandle;
         }
+
+        static public bool isBasicType(string type)
+        {
+            return (type.Equals("double") ||
+                type.Equals("boolean"));
+        }
+
+        static public string uppercaseFirstLetter(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return string.Empty;
+            }
+
+            return char.ToUpper(s[0]) + s.Substring(1);
+        }
     }
 }

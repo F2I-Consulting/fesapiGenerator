@@ -35,9 +35,10 @@ namespace fesapiGenerator
         private const string menuHeader = "-&Fesapi Generator";
         private const string energisticsModelAlterationGenerateCode = "&Generate fesapi with Energistics model alteration";
         private const string fesapiModelGenerationMenuGenerateFesapiModel = "&Only generate fesapi model";
+        private const string fesapiModelGenerationMenuGenerateCode = "&Only generate fesapi code from fesapi generated model";
         private const string energisticsModelAlterationMenuUpdateEnergisticsModel = "&Only update Energistics model";
         private const string energisticsModelAlterationMenuTransformEnergisticsModel = "&Only transform Energistics model into C++ model";
-        private const string energisticsModelAlterationMenuGenerateCode = "&Only generate fesapi code";
+        private const string energisticsModelAlterationMenuGenerateCode = "&Only generate fesapi code from Energistics model alteration";
         
         #endregion
 
@@ -95,7 +96,7 @@ namespace fesapiGenerator
                     string[] subMenus = { energisticsModelAlterationGenerateCode, "-&Fesapi model generation methodology", "-&Energistics model alteration methodology" };
                     return subMenus;
                 case "-&Fesapi model generation methodology":
-                    string[] fesapiModelGenerationMenus = { fesapiModelGenerationMenuGenerateFesapiModel };
+                    string[] fesapiModelGenerationMenus = { fesapiModelGenerationMenuGenerateFesapiModel, fesapiModelGenerationMenuGenerateCode };
                     return fesapiModelGenerationMenus;
                 case "-&Energistics model alteration methodology":
                     string[] energisticsModelAlterationMenus = { energisticsModelAlterationMenuUpdateEnergisticsModel, energisticsModelAlterationMenuTransformEnergisticsModel, energisticsModelAlterationMenuGenerateCode };
@@ -154,6 +155,10 @@ namespace fesapiGenerator
                     case fesapiModelGenerationMenuGenerateFesapiModel:
                         isEnabled = true;
                         break;
+                    // define the state of the "Only generate fesapi code" option (from fesapi model generation)
+                    case fesapiModelGenerationMenuGenerateCode:
+                        isEnabled = true;
+                        break;
                     // define the state of the "Only update Energistics model" option
                     case energisticsModelAlterationMenuUpdateEnergisticsModel:
                         isEnabled = true;
@@ -162,7 +167,7 @@ namespace fesapiGenerator
                     case energisticsModelAlterationMenuTransformEnergisticsModel:
                         isEnabled = true;
                         break;
-                    // define the state of the "Only generate fesapi code" option
+                    // define the state of the "Only generate fesapi code" option (from Energistics model alteration)
                     case energisticsModelAlterationMenuGenerateCode:
                         isEnabled = true;
                         break;
@@ -197,6 +202,10 @@ namespace fesapiGenerator
                 case fesapiModelGenerationMenuGenerateFesapiModel:
                     this.onlyGenerateFesapiModelOption();
                     break;
+                // user has clicked the "Only generate fesapi code from fesapi generated model" option
+                case fesapiModelGenerationMenuGenerateCode:
+                    this.onlygGenerateCodeFromFesapiModelGenerationOption();
+                    break;
                 // user has clicked the "Only update Energistics model" option
                 case energisticsModelAlterationMenuUpdateEnergisticsModel:
                     this.onlyUpdateEnergisticsModelOption();
@@ -207,7 +216,7 @@ namespace fesapiGenerator
                     break;
                 // user has clicked the "Only generate fesapi code" option
                 case energisticsModelAlterationMenuGenerateCode:
-                    this.onlyGenerateCodeOption();
+                    this.onlyGenerateCodeFromEnergisticsModelAlterationOption();
                     break;
             }
         }
@@ -301,7 +310,7 @@ namespace fesapiGenerator
                 return;
             }
 
-            generateCode(cppEnergisticsModel, outputPath);
+            generateCodeFromEnergisticsModelAlteration(cppEnergisticsModel, outputPath);
         }
 
         /// <summary>
@@ -353,6 +362,37 @@ namespace fesapiGenerator
 
             // make sure the model view is up to date in the Enterprise Architect GUI
             repository.RefreshModelView(0);
+        }
+
+        /// <summary>
+        /// Called when the user clicks the "Only generate fesapi code from fesapi generated model" option
+        /// </summary>
+        private void onlygGenerateCodeFromFesapiModelGenerationOption()
+        {
+            // make shure the Fesapi Generator tab is visible to the user
+            repository.EnsureOutputVisible(Constants.outputTabName);
+
+            // make sure the models are up to date
+            repository.Models.Refresh();
+
+            // looking for an existing fesapi model
+            EA.Package fesapiModel;
+            try
+            {
+                fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
+            }
+            catch (Exception)
+            {
+                Tool.showMessageBox(repository, "The project must carry a " + Constants.fesapiModelName + " model!");
+                return;
+            }
+
+            // getting the outputPath from the user
+            string outputPath = Tool.getOutputPath();
+            if (outputPath != "")
+            {
+                generateCodeFromFesapiModelGeneration(fesapiModel, outputPath);
+            }
         }
 
         /// <summary>
@@ -456,7 +496,7 @@ namespace fesapiGenerator
         /// <summary>
         /// Called when the user clicks the "Only generate fesapi code" option
         /// </summary>
-        private void onlyGenerateCodeOption()
+        private void onlyGenerateCodeFromEnergisticsModelAlterationOption()
         {
             // make shure the Fesapi Generator tab is visible to the user
             repository.EnsureOutputVisible(Constants.outputTabName);
@@ -480,7 +520,7 @@ namespace fesapiGenerator
             string outputPath = Tool.getOutputPath();
             if (outputPath != "")
             {
-                generateCode(cppEnergisticsModel, outputPath);
+                generateCodeFromEnergisticsModelAlteration(cppEnergisticsModel, outputPath);
             }
         }
 
@@ -579,6 +619,32 @@ namespace fesapiGenerator
             fesapiModelGenerator.generateFesapiModel();
 
             Tool.log(repository, "fesapi model generated.");
+        }
+
+        private void generateCodeFromFesapiModelGeneration(EA.Package fesapiModel, string outputPath)
+        {
+            Tool.log(repository, "Generating fesapi code from fesapi model generation...");
+
+            // getting the list of classes to generate
+            List<EA.Element> toGenerateClassList = new List<EA.Element>();
+            Tool.fillElementList(fesapiModel, toGenerateClassList);
+
+            // setting the code output path for each class
+            EA.Project project = repository.GetProjectInterface();
+            foreach (EA.Element c in toGenerateClassList)
+            {
+                c.Genfile = outputPath + "\\" + repository.GetPackageByID(c.PackageID).Name + "\\" + c.Name + ".h";
+                if (!(c.Update()))
+                {
+                    Tool.showMessageBox(repository, c.GetLastError());
+                    continue;
+                }
+            }
+
+            // generating the code
+            project.GeneratePackage(fesapiModel.PackageGUID, "recurse=1;overwrite=1");
+
+            Tool.log(repository, "fesapi code generated.");
         }
 
         /// <summary>
@@ -781,9 +847,9 @@ namespace fesapiGenerator
         /// </summary>
         /// <param name="cppEnergisticsModel"></param>
         /// <param name="outputPath"></param>
-        private void generateCode(EA.Package cppEnergisticsModel, string outputPath)
+        private void generateCodeFromEnergisticsModelAlteration(EA.Package cppEnergisticsModel, string outputPath)
         {
-            Tool.log(repository, "Generating fesapi code...");
+            Tool.log(repository, "Generating fesapi code from Energistics model alteration...");
 
             // getting the list of classes to generate
             List<EA.Element> toGenerateClassList = new List<EA.Element>();
