@@ -57,6 +57,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="EnergisticsModelUpdate.cs" />
     <Compile Include="FesapiModelGenerator.cs" />
+    <Compile Include="FesapiModelUpdate.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="ProgressDialog.cs">
       <SubType>Form</SubType>

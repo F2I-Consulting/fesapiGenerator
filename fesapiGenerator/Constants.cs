@@ -98,6 +98,38 @@ namespace fesapiGenerator
         public const string fesapiResqml2_2PackageName = "resqml2_2";
 
         /// <summary>
+        /// Name of the custom fesapi model
+        /// </summary>
+        public const string customFesapiModelName = "custom fesapi";
+
+        //TODO: following packages name are same than fesapi ones... 
+
+        /// <summary>
+        /// Name of the custom fesapi class model
+        /// </summary>
+        public const string customFesapiClassModelName = "Class Model";
+
+        /// <summary>
+        /// Name of the custom fesapi common package
+        /// </summary>
+        public const string customFesapiCommonPackageName = "common";
+
+        /// <summary>
+        /// Name of the custom fesapi resqml2 package
+        /// </summary>
+        public const string customFesapiResqml2PackageName = "resqml2";
+
+        /// <summary>
+        /// Name of the custom fesapi resqml2_0_1 package
+        /// </summary>
+        public const string customFesapiResqml2_0_1PackageName = "resqml2_0_1";
+
+        /// <summary>
+        /// Name of the custom fesapi resqml2_2 package
+        /// </summary>
+        public const string customFesapiResqml2_2PackageName = "resqml2_2";
+
+        /// <summary>
         /// Name of the transformed C++ Energistics model
         /// </summary>
         public const string cppEnergisticsModelName = "c++ energistics";

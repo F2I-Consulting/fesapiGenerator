@@ -416,5 +416,18 @@ namespace fesapiGenerator
 
             return char.ToUpper(s[0]) + s.Substring(1);
         }
+
+        //TODO: need for a conversion table (within XML configuration file?) 
+        static public string umlToCppType(string umlType)
+        {
+            if (umlType.Equals("boolean"))
+            {
+                return "bool";
+            }
+            else
+            {
+                return umlType;
+            }
+        }
     }
 }
