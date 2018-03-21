@@ -325,7 +325,7 @@ namespace fesapiGenerator
             energisticsClass.Methods.Refresh();
 
             // adding the gSOAP proxy parameter
-            string fesapiConstructorParamType = Constants.resqml2_0_1GsoapPrefix + energisticsClass.Name + "*";
+            string fesapiConstructorParamType = "gsoap_resqml2_0_1::resqml2__" + energisticsClass.Name + "*";
             EA.Parameter fesapiConstructParam = fesapiConstructor.Parameters.AddNew("fromGsoap", fesapiConstructorParamType);
             if (!(fesapiConstructParam.Update()))
             {

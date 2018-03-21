@@ -29,6 +29,11 @@ namespace fesapiGenerator
         #region members
 
         /// <summary>
+        /// Fesapi generation XML configuration file
+        /// </summary>
+        private XmlDocument codeConfigurationFile;
+
+        /// <summary>
         /// EA repository.
         /// </summary>
         private EA.Repository repository;
@@ -112,11 +117,13 @@ namespace fesapiGenerator
         /// <param name="resqmlModel">Energistics resqml model</param>
         /// <param name="fesapiModel">fesapi model</param>
         public FesapiModelGenerator(
+            XmlDocument xmlConf,
             EA.Repository repository,
             EA.Package commonModel, EA.Package commonV2Package, EA.Package commonV2_2Package,
             EA.Package resqmlModel, EA.Package resqmlV2_0_1Package, EA.Package resqmlV2_2Package,
             EA.Package fesapiModel, EA.Package fesapiCommonPackage, EA.Package fesapiResqml2Package, EA.Package fesapiResqml2_0_1Package, EA.Package fesapiResqml2_2Package)
         {
+            this.codeConfigurationFile = xmlConf;
             this.repository = repository;
             this.commonModel = commonModel;
             this.commonV2Package = commonV2Package;
@@ -173,9 +180,9 @@ namespace fesapiGenerator
             {
                 string className = energisticsResqml2_0_1Class.Name;
 
-                //// for debugging purpose (accelerating process)
-                //if (!(className.Equals("AbstractLocal3dCrs")) && !(className.Equals("LocalDepth3dCrs")) && !(className.Equals("LocalTime3dCrs")))
-                //    continue;
+                // for debugging purpose (accelerating process)
+                if (!(className.Equals("AbstractLocal3dCrs")) && !(className.Equals("LocalDepth3dCrs")) && !(className.Equals("LocalTime3dCrs")))
+                    continue;
 
                 EA.Element energisticsResqml2_2Class = energisticsResqml2_2ClassList.Find(c => c.Name.Equals(className));
                 if (energisticsResqml2_2Class != null)
@@ -217,22 +224,22 @@ namespace fesapiGenerator
                 }
             }
 
-            // looking for Resqml 2.2 classes which are not common with Resqml 2.0.1
-            foreach (EA.Element energisticsResqml2_2Class in energisticsResqml2_2ClassList)
-            {
-                string className = energisticsResqml2_2Class.Name;
+            //// looking for Resqml 2.2 classes which are not common with Resqml 2.0.1
+            //foreach (EA.Element energisticsResqml2_2Class in energisticsResqml2_2ClassList)
+            //{
+            //    string className = energisticsResqml2_2Class.Name;
 
-                EA.Element energisticsResqml2_0_1Class = energisticsResqml2_0_1ClassList.Find(c => c.Name.Equals(className));
-                if (energisticsResqml2_0_1Class == null)
-                {
-                    EA.Element fesapiResqml2_2Class = addFesapiClass(className, fesapiResqml2_2Package);
-                    if (fesapiResqml2_2Class != null)
-                    {
-                        fesapiResqml2_2ClassList.Add(fesapiResqml2_2Class);
-                        fesapiResqml2_2toEnergisticsResqml2_2.Add(fesapiResqml2_2Class, energisticsResqml2_2Class);
-                    }
-                }
-            }
+            //    EA.Element energisticsResqml2_0_1Class = energisticsResqml2_0_1ClassList.Find(c => c.Name.Equals(className));
+            //    if (energisticsResqml2_0_1Class == null)
+            //    {
+            //        EA.Element fesapiResqml2_2Class = addFesapiClass(className, fesapiResqml2_2Package);
+            //        if (fesapiResqml2_2Class != null)
+            //        {
+            //            fesapiResqml2_2ClassList.Add(fesapiResqml2_2Class);
+            //            fesapiResqml2_2toEnergisticsResqml2_2.Add(fesapiResqml2_2Class, energisticsResqml2_2Class);
+            //        }
+            //    }
+            //}
 
             fesapiCommonPackage.Elements.Refresh();
             fesapiResqml2Package.Elements.Refresh();
@@ -437,15 +444,15 @@ namespace fesapiGenerator
             Tool.log(repository, "inheritanceSetting() end.");
         }
 
-        private EA.Method addPartialTransfertConstructor(EA.Element fesapiClass, string gsoapPrefix)
+        private EA.Method addDefaultConstructor(EA.Element fesapiClass, string visibility)
         {
-            // adding a new partial transfert constructor, basically a method named whith the Energistics class name
             EA.Method constructor = fesapiClass.Methods.AddNew(fesapiClass.Name, "");
-            constructor.Code = "";
-            constructor.Notes = "Only to be used in partial transfer context";
+            constructor.Notes = "Default constructor\nSet the gsoap proxy to nullptr.";
+            constructor.Visibility =visibility;
             if (!(constructor.Update()))
             {
                 Tool.showMessageBox(repository, constructor.GetLastError());
+                return null;
             }
             fesapiClass.Methods.Refresh();
 
@@ -454,6 +461,57 @@ namespace fesapiGenerator
             if (!(bodyLocationTag.Update()))
             {
                 Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            constructor.TaggedValues.Refresh();
+
+            return constructor;
+        }
+
+        private EA.Method addDefaultDestructor(EA.Element fesapiClass)
+        {
+            EA.Method destructor = fesapiClass.Methods.AddNew("~" + fesapiClass.Name, "");
+            destructor.Notes = "Destructor does nothing since the memory is managed by the gsoap context.";
+            destructor.Abstract = true; // specify that the destructor is virtual
+            destructor.Visibility = "public"; // destructor always public
+            if (!(destructor.Update()))
+            {
+                Tool.showMessageBox(repository, destructor.GetLastError());
+                return null;
+            }
+            fesapiClass.Methods.Refresh();
+
+            // adding a tag sepcifying that the body will be located into the class declaration
+            EA.MethodTag bodyLocationTag = destructor.TaggedValues.AddNew("bodyLocation", "classDec");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            destructor.TaggedValues.Refresh();
+            
+            return destructor;
+        }
+
+        private EA.Method addPartialTransfertConstructor(EA.Element fesapiClass, string visibility, string gsoapPrefix)
+        {
+            EA.Method constructor = fesapiClass.Methods.AddNew(fesapiClass.Name, "");
+            constructor.Code = "";
+            constructor.Notes = "Only to be used in partial transfer context";
+            constructor.Visibility = visibility;
+            if (!(constructor.Update()))
+            {
+                Tool.showMessageBox(repository, constructor.GetLastError());
+                return null;
+            }
+            fesapiClass.Methods.Refresh();
+
+            // adding a tag sepcifying that the body will be located into the class declaration
+            EA.MethodTag bodyLocationTag = constructor.TaggedValues.AddNew("bodyLocation", "classDec");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
             }
             constructor.TaggedValues.Refresh();
 
@@ -462,6 +520,7 @@ namespace fesapiGenerator
             if (!(parameter.Update()))
             {
                 Tool.showMessageBox(repository, parameter.GetLastError());
+                return null;
             }
             constructor.Parameters.Refresh();
 
@@ -489,12 +548,12 @@ namespace fesapiGenerator
             return constructor;
         }
 
-        private EA.Method addDeserializationConstructor(EA.Element fesapiClass, string gsoapPrefix)
+        private EA.Method addDeserializationConstructor(EA.Element fesapiClass, string visibility, string gsoapPrefix)
         {
-            // adding a new deserialization constructor, basically a method named whith the Energistics class name
             EA.Method constructor = fesapiClass.Methods.AddNew(fesapiClass.Name, "");
             constructor.Code = "";
             constructor.Notes = "Creates an instance of this class by wrapping a gsoap instance.";
+            constructor.Visibility = visibility;
             if (!(constructor.Update()))
             {
                 Tool.showMessageBox(repository, constructor.GetLastError());
@@ -541,27 +600,58 @@ namespace fesapiGenerator
 
         private void constructorSetting()
         {
+            string xmlEqml2_0GsoapPrefix = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Eml2_0GsoapPrefix").Attributes["value"].Value;
+            string xmlEqml2_2GsoapPrefix = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Eml2_2GsoapPrefix").Attributes["value"].Value;
+            string xmlResqml2_0_1GsoapPrefix = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_0_1GsoapPrefix").Attributes["value"].Value;
+            string xmlResqml2_2GsoapPrefix = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_2GsoapPrefix").Attributes["value"].Value;
+
             // handling fesapi/resqml2 classes
             foreach (EA.Element resqml2Class in fesapiResqml2ClassList)
             {
-                addPartialTransfertConstructor(resqml2Class, Constants.eml20GsoapPrefix);
-                addPartialTransfertConstructor(resqml2Class, Constants.eml22GsoapPrefix);
-                addDeserializationConstructor(resqml2Class, Constants.resqml2_0_1GsoapPrefix);
-                addDeserializationConstructor(resqml2Class, Constants.resqml2_2GsoapPrefix);
+                addDefaultConstructor(resqml2Class, "protected");
+                addDefaultDestructor(resqml2Class);
+                addPartialTransfertConstructor(resqml2Class, "protected", xmlEqml2_0GsoapPrefix);
+                addPartialTransfertConstructor(resqml2Class, "protected", xmlEqml2_2GsoapPrefix);
+                addDeserializationConstructor(resqml2Class, "protected", xmlResqml2_0_1GsoapPrefix);
+                addDeserializationConstructor(resqml2Class, "protected", xmlResqml2_2GsoapPrefix);
             }
 
             // handling fesapi/resqml2_0_1 classes
             foreach (EA.Element resqml2_0_1Class in fesapiResqml2_0_1ClassList)
             {
-                addPartialTransfertConstructor(resqml2_0_1Class, Constants.eml20GsoapPrefix);
-                addDeserializationConstructor(resqml2_0_1Class, Constants.resqml2_0_1GsoapPrefix);
+                string constructorVisibility;
+                if (Tool.isAbstract(resqml2_0_1Class))
+                {
+                    constructorVisibility = "protected";
+                }
+                else
+                {
+                    constructorVisibility = "public";
+                }
+
+                addDefaultConstructor(resqml2_0_1Class, constructorVisibility);
+                addDefaultDestructor(resqml2_0_1Class);
+                addPartialTransfertConstructor(resqml2_0_1Class, constructorVisibility, xmlEqml2_0GsoapPrefix);
+                addDeserializationConstructor(resqml2_0_1Class, constructorVisibility, xmlResqml2_0_1GsoapPrefix);
             }
 
             // handling fesapi/resqml2_2 classes
             foreach (EA.Element resqml2_2Class in fesapiResqml2_2ClassList)
             {
-                addPartialTransfertConstructor(resqml2_2Class, Constants.eml22GsoapPrefix);
-                addDeserializationConstructor(resqml2_2Class, Constants.resqml2_2GsoapPrefix);
+                string constructorVisibility;
+                if (Tool.isAbstract(resqml2_2Class))
+                {
+                    constructorVisibility = "protected";
+                }
+                else
+                {
+                    constructorVisibility = "public";
+                }
+
+                addDefaultConstructor(resqml2_2Class, constructorVisibility);
+                addDefaultDestructor(resqml2_2Class);
+                addPartialTransfertConstructor(resqml2_2Class, constructorVisibility, xmlEqml2_2GsoapPrefix);
+                addDeserializationConstructor(resqml2_2Class, constructorVisibility, xmlResqml2_2GsoapPrefix);
             }
         }
 
@@ -634,13 +724,11 @@ namespace fesapiGenerator
 
         private EA.Method addSimpleResqml2Getter(EA.Element fesapiClass, string attributeName, string attributeType)
         {
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load("C:\\Users\\Mathieu Poudret\\Documents\\Projets 2017\\fesapi generator\\fesapiGenConf.xml");
-            string xmlResqml2_0_1GsoapProxy = xmlDoc.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_0_1GsoapProxy").Attributes["value"].Value;
-            string xmlResqml2_0_1GSoapPrefix = xmlDoc.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_0_1GsoapPrefix").Attributes["value"].Value;
-            string xmlResqml2_2GsoapProxy = xmlDoc.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_2GsoapProxy").Attributes["value"].Value;
-            string xmlResqml2_2GSoapPrefix = xmlDoc.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_2GsoapPrefix").Attributes["value"].Value;
-            string xmlAttributeAccess = xmlDoc.DocumentElement.SelectSingleNode("/FesapiGenConf/Expressions/AttributeAccess").Attributes["value"].Value;
+            string xmlResqml2_0_1GsoapProxy = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_0_1GsoapProxy").Attributes["value"].Value;
+            string xmlResqml2_0_1GSoapPrefix = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_0_1GsoapPrefix").Attributes["value"].Value;
+            string xmlResqml2_2GsoapProxy = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_2GsoapProxy").Attributes["value"].Value;
+            string xmlResqml2_2GSoapPrefix = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Constants/Resqml2_2GsoapPrefix").Attributes["value"].Value;
+            string xmlAttributeAccess = codeConfigurationFile.DocumentElement.SelectSingleNode("/FesapiGenConf/Expressions/AttributeAccess").Attributes["value"].Value;
 
             string cppAttributeType = Tool.umlToCppType(attributeType);
             EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName, cppAttributeType);

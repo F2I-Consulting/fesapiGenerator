@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<FesapiGenConf>
+  <Constants>
+    <Eml2_0GsoapPrefix value="gsoap_resqml2_0_1::eml20__" />
+    <Resqml2_0_1GsoapPrefix value="gsoap_resqml2_0_1::resqml2__" />
+    <Eml2_2GsoapPrefix value="gsoap_eml2_2::eml22__" />
+    <Resqml2_2GsoapPrefix value="gsoap_eml2_2::resqml2__" />
+    <Resqml2_0_1GsoapProxy value="gsoapProxy2_0_1" />
+    <Resqml2_2GsoapProxy value="gsoapProxy2_2" />
+  </Constants>
+  <Expressions>
+    <AttributeAccess value="static_cast&lt;#PREFIX#CLASS*&gt;(#PROXY)-&gt;#ATTRIBUTE;" />
+  </Expressions>
+</FesapiGenConf>

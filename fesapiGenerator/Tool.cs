@@ -332,6 +332,15 @@ namespace fesapiGenerator
                 fillElementList(p, list, type, stereotype);
         }
 
+        //public static string getCodeConfigurationFilePath()
+        //{
+        //    string codeConfigurationPath = " ";
+
+        //    OpenFileDialog openFileDialog = new OpenFileDialog();
+        //    openFileDialog.Title = "Please select code generation configuration file"; 
+           
+        //}
+
         /// <summary>
         /// This methods asks the user for a generated sources output path. It first looks for
         /// such a path in the addin .xml configuration file
@@ -428,6 +437,23 @@ namespace fesapiGenerator
             {
                 return umlType;
             }
+        }
+
+        //TODO: for the time being we consider that two methods are equal iff they have the same name
+        static public bool areEqualMethods(EA.Method m1, EA.Method m2)
+        {
+            return m1.Name.Equals(m2.Name);
+        }
+
+        //TODO: for the time being we consider that to attributes are equal iff they have the same name
+        static public bool areEqualAttributes(EA.Attribute a1, EA.Attribute a2)
+        {
+            return a1.Name.Equals(a2.Name);
+        }
+
+        static public bool isAbstract(EA.Element c)
+        {
+            return (c.Type == "Class" && c.Name.StartsWith("Abstract"));
         }
     }
 }

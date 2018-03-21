@@ -19,6 +19,7 @@ under the License.
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Xml;
 
 namespace fesapiGenerator
 {
@@ -33,14 +34,15 @@ namespace fesapiGenerator
         /// Names of the addin menu options
         /// </summary>
         private const string menuHeader = "-&Fesapi Generator";
-        private const string energisticsModelAlterationGenerateCode = "&Generate fesapi with Energistics model alteration";
+        private const string fesapiModelGenerationGenerateCode = "&Generate fesapi";
         private const string fesapiModelGenerationMenuGenerateFesapiModel = "&Only generate fesapi model";
         private const string fesapiModelGenerationMenuUpdateFesapiModel = "&Only update fesapi model";
         private const string fesapiModelGenerationMenuGenerateCode = "&Only generate fesapi code from fesapi generated model";
+        private const string energisticsModelAlterationGenerateCode = "&Generate fesapi with Energistics model alteration";
         private const string energisticsModelAlterationMenuUpdateEnergisticsModel = "&Only update Energistics model";
         private const string energisticsModelAlterationMenuTransformEnergisticsModel = "&Only transform Energistics model into C++ model";
         private const string energisticsModelAlterationMenuGenerateCode = "&Only generate fesapi code from Energistics model alteration";
-        
+
         #endregion
 
         #region members
@@ -94,7 +96,7 @@ namespace fesapiGenerator
                     return menuHeader;
                 // defines the submenu options
                 case menuHeader:
-                    string[] subMenus = { energisticsModelAlterationGenerateCode, "-&Fesapi model generation methodology", "-&Energistics model alteration methodology" };
+                    string[] subMenus = { fesapiModelGenerationGenerateCode, "-&Fesapi model generation methodology", energisticsModelAlterationGenerateCode, "-&Energistics model alteration methodology" };
                     return subMenus;
                 case "-&Fesapi model generation methodology":
                     string[] fesapiModelGenerationMenus = { fesapiModelGenerationMenuGenerateFesapiModel, fesapiModelGenerationMenuUpdateFesapiModel, fesapiModelGenerationMenuGenerateCode };
@@ -141,7 +143,7 @@ namespace fesapiGenerator
         /// <param name="itemName">the name of the menu item</param>
         /// <param name="isEnabled">boolean indicating whethe the menu item is enabled</param>
         /// <param name="IsChecked">boolean indicating whether the menu is checked</param>
-        public void EA_GetMenuState(EA.Repository repository, string location, string menuName, 
+        public void EA_GetMenuState(EA.Repository repository, string location, string menuName,
             string itemName, ref bool isEnabled, ref bool IsChecked)
         {
             if (IsProjectOpen(repository))
@@ -149,7 +151,7 @@ namespace fesapiGenerator
                 switch (itemName)
                 {
                     // define the state of the "Generate fesapi" option
-                    case energisticsModelAlterationGenerateCode:
+                    case fesapiModelGenerationGenerateCode:
                         isEnabled = true;
                         break;
                     // define the state of the "Only generate fesapi model" option
@@ -164,17 +166,21 @@ namespace fesapiGenerator
                     case fesapiModelGenerationMenuGenerateCode:
                         isEnabled = true;
                         break;
+                    // define the state of the "Generate fesapi with Energistics model alteration" option
+                    case energisticsModelAlterationGenerateCode:
+                        isEnabled = false;
+                        break;
                     // define the state of the "Only update Energistics model" option
                     case energisticsModelAlterationMenuUpdateEnergisticsModel:
-                        isEnabled = true;
+                        isEnabled = false;
                         break;
                     // define the state of the "Only transform Energistics model into C++ Model" option
                     case energisticsModelAlterationMenuTransformEnergisticsModel:
-                        isEnabled = true;
+                        isEnabled = false;
                         break;
                     // define the state of the "Only generate fesapi code" option (from Energistics model alteration)
                     case energisticsModelAlterationMenuGenerateCode:
-                        isEnabled = true;
+                        isEnabled = false;
                         break;
                     default:
                         isEnabled = false;
@@ -200,7 +206,7 @@ namespace fesapiGenerator
             switch (itemName)
             {
                 // user has clicked the "Generate fesapi" option
-                case energisticsModelAlterationGenerateCode:
+                case fesapiModelGenerationGenerateCode:
                     this.generateFesapiOption();
                     break;
                 // user has clicked the "Only generate fesapi model" option
@@ -214,6 +220,10 @@ namespace fesapiGenerator
                 // user has clicked the "Only generate fesapi code from fesapi generated model" option
                 case fesapiModelGenerationMenuGenerateCode:
                     this.onlygGenerateCodeFromFesapiModelGenerationOption();
+                    break;
+                // user has clicked the "Generate fesapi with Energistics model alteration" option
+                case energisticsModelAlterationGenerateCode:
+                    this.generateFesapiFromEnergisticsModelAlterationOption();
                     break;
                 // user has clicked the "Only update Energistics model" option
                 case energisticsModelAlterationMenuUpdateEnergisticsModel:
@@ -234,9 +244,6 @@ namespace fesapiGenerator
 
         #region Menu options behaviors
 
-        /// <summary>
-        /// Called when the user clicks the "Generate fesapi" option
-        /// </summary>
         private void generateFesapiOption()
         {
             // make shure the Fesapi Generator tab is visible to the user
@@ -245,19 +252,21 @@ namespace fesapiGenerator
             // make sure the models are up to date
             repository.Models.Refresh();
 
-            // getting the common, resqml and fesapi models with common/v2.0 and resqml/v2.0.1 packages
+            // getting the common and resqml models with common/v2.0, common/v2.2, resqml/v2.2 and resqml/v2.0.1 packages
             EA.Package commonModel;
             EA.Package commonV2Package;
+            EA.Package commonV2_2Package;
             EA.Package resqmlModel;
             EA.Package resqmlV2_0_1Package;
-            EA.Package fesapiModel;
+            EA.Package resqmlV2_2Package;
             try
             {
                 commonModel = repository.Models.GetByName(Constants.commonModelName);
                 commonV2Package = commonModel.Packages.GetByName(Constants.commonV2PackageName);
+                commonV2_2Package = commonModel.Packages.GetByName(Constants.commonV2_2PackageName);
                 resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
                 resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_0_1PackageName);
-                fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
+                resqmlV2_2Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_2PackageName);
             }
             catch (Exception)
             {
@@ -277,23 +286,44 @@ namespace fesapiGenerator
             Thread backgroundThread = new Thread(
                 new ThreadStart(() =>
                 {
-                    updateEnergisticsModel(commonModel, commonV2Package, resqmlModel, resqmlV2_0_1Package, fesapiModel);
+                    // step 1: generating fesapi model
+                    generateFesapiModel(commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package);
 
-                    // getting the common/updated v2.0 and resqml/updated v2.0.1 packages
-                    EA.Package updatedCommonV2Package;
-                    EA.Package updatedResqmlV2_0_1Package;
+                    // getting the 
+                    EA.Package fesapiModel;
+                    EA.Package fesapiCommonPackage;
+                    EA.Package fesapiResqml2Package;
+                    EA.Package fesapiResqml2_0_1Package;
+                    EA.Package fesapiResqml2_2Package;
+                    EA.Package customFesapiModel;
+                    EA.Package customFesapiCommonPackage;
+                    EA.Package customFesapiResqml2Package;
+                    EA.Package customFesapiResqml2_0_1Package;
+                    EA.Package customFesapiResqml2_2Package;
                     try
                     {
-                        updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommonV2PackageName);
-                        updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqmlV2_0_1PackageName);
+                        fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
+                        EA.Package fesapiClassModel = fesapiModel.Packages.GetByName(Constants.fesapiClassModelName);
+                        fesapiCommonPackage = fesapiClassModel.Packages.GetByName(Constants.fesapiCommonPackageName);
+                        fesapiResqml2Package = fesapiClassModel.Packages.GetByName(Constants.fesapiResqml2PackageName);
+                        fesapiResqml2_0_1Package = fesapiClassModel.Packages.GetByName(Constants.fesapiResqml2_0_1PackageName);
+                        fesapiResqml2_2Package = fesapiClassModel.Packages.GetByName(Constants.fesapiResqml2_2PackageName);
+                        customFesapiModel = repository.Models.GetByName(Constants.customFesapiModelName);
+                        EA.Package customFesapiClassModel = customFesapiModel.Packages.GetByName(Constants.customFesapiClassModelName);
+                        customFesapiCommonPackage = customFesapiClassModel.Packages.GetByName(Constants.customFesapiCommonPackageName);
+                        customFesapiResqml2Package = customFesapiClassModel.Packages.GetByName(Constants.customFesapiResqml2PackageName);
+                        customFesapiResqml2_0_1Package = customFesapiClassModel.Packages.GetByName(Constants.customFesapiResqml2_0_1PackageName);
+                        customFesapiResqml2_2Package = customFesapiClassModel.Packages.GetByName(Constants.customFesapiResqml2_2PackageName);
                     }
                     catch (Exception)
                     {
-                        Tool.showMessageBox(repository, "An error occured during the Energistics model update since no common/updated v2.0 or resqml/updated v2.0.1 package exists!");
+                        Tool.showMessageBox(repository, "The project must carry \"fesapi\" and \"custom fesapi\" models containing a \"Class Model\" with sub \"common\", \"resqml2\", \"resqml2_0_1\" and \"resqml2_2\" packages!");
                         return;
                     }
 
-                    transformEnergisticsModelToCppModel(updatedCommonV2Package, updatedResqmlV2_0_1Package);
+                    // step 2: updating fesapi model
+                    updateFesapiModel(fesapiModel, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package,
+                        customFesapiModel, customFesapiCommonPackage, customFesapiResqml2Package, customFesapiResqml2_0_1Package, customFesapiResqml2_2Package);
 
                     // closing progress bar dialog
                     progressDialog.BeginInvoke(new Action(() => progressDialog.Close()));
@@ -301,25 +331,11 @@ namespace fesapiGenerator
             backgroundThread.Start();
             progressDialog.ShowDialog();
 
+            // step 3: generating fesapi code
+            generateCodeFromFesapiModelGeneration(repository.Models.GetByName(Constants.fesapiModelName), outputPath);
+     
             // make sure the model view is up to date in the Enterprise Architect GUI
             repository.RefreshModelView(0);
-
-            // make sure the models are up to date
-            repository.Models.Refresh();
-
-            // looking for an existing c++ energistics model
-            EA.Package cppEnergisticsModel;
-            try
-            {
-                cppEnergisticsModel = repository.Models.GetByName(Constants.cppEnergisticsModelName);
-            }
-            catch (Exception)
-            {
-                Tool.showMessageBox(repository, "An error occured during the Energistics model transformation since no " + Constants.cppEnergisticsModelName + " model exists!");
-                return;
-            }
-
-            generateCodeFromEnergisticsModelAlteration(cppEnergisticsModel, outputPath);
         }
 
         /// <summary>
@@ -467,6 +483,93 @@ namespace fesapiGenerator
         }
 
         /// <summary>
+        /// Called when the user clicks the "Generate fesapi with Energistics model alteration" option
+        /// </summary>
+        private void generateFesapiFromEnergisticsModelAlterationOption()
+        {
+            // make shure the Fesapi Generator tab is visible to the user
+            repository.EnsureOutputVisible(Constants.outputTabName);
+
+            // make sure the models are up to date
+            repository.Models.Refresh();
+
+            // getting the common, resqml and fesapi models with common/v2.0 and resqml/v2.0.1 packages
+            EA.Package commonModel;
+            EA.Package commonV2Package;
+            EA.Package resqmlModel;
+            EA.Package resqmlV2_0_1Package;
+            EA.Package fesapiModel;
+            try
+            {
+                commonModel = repository.Models.GetByName(Constants.commonModelName);
+                commonV2Package = commonModel.Packages.GetByName(Constants.commonV2PackageName);
+                resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
+                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_0_1PackageName);
+                fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
+            }
+            catch (Exception)
+            {
+                Tool.showMessageBox(repository, "The project must carry common, resqml and fesapi models with common/v2.0 and resqml/v2.0.1 packages!");
+                return;
+            }
+
+            // getting the outputPath from the user
+            string outputPath = Tool.getOutputPath();
+            if (outputPath == "")
+                return;
+
+            // since subsequent operations are time consuming, we need to set tup
+            // a progress bar
+            ProgressDialog progressDialog = new ProgressDialog();
+            Thread backgroundThread = new Thread(
+                new ThreadStart(() =>
+                {
+                    updateEnergisticsModel(commonModel, commonV2Package, resqmlModel, resqmlV2_0_1Package, fesapiModel);
+
+                    // getting the common/updated v2.0 and resqml/updated v2.0.1 packages
+                    EA.Package updatedCommonV2Package;
+                    EA.Package updatedResqmlV2_0_1Package;
+                    try
+                    {
+                        updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommonV2PackageName);
+                        updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqmlV2_0_1PackageName);
+                    }
+                    catch (Exception)
+                    {
+                        Tool.showMessageBox(repository, "An error occured during the Energistics model update since no common/updated v2.0 or resqml/updated v2.0.1 package exists!");
+                        return;
+                    }
+
+                    transformEnergisticsModelToCppModel(updatedCommonV2Package, updatedResqmlV2_0_1Package);
+
+                    // closing progress bar dialog
+                    progressDialog.BeginInvoke(new Action(() => progressDialog.Close()));
+                }));
+            backgroundThread.Start();
+            progressDialog.ShowDialog();
+
+            // make sure the model view is up to date in the Enterprise Architect GUI
+            repository.RefreshModelView(0);
+
+            // make sure the models are up to date
+            repository.Models.Refresh();
+
+            // looking for an existing c++ energistics model
+            EA.Package cppEnergisticsModel;
+            try
+            {
+                cppEnergisticsModel = repository.Models.GetByName(Constants.cppEnergisticsModelName);
+            }
+            catch (Exception)
+            {
+                Tool.showMessageBox(repository, "An error occured during the Energistics model transformation since no " + Constants.cppEnergisticsModelName + " model exists!");
+                return;
+            }
+
+            generateCodeFromEnergisticsModelAlteration(cppEnergisticsModel, outputPath);
+        }
+
+        /// <summary>
         /// Called when the user clicks the "Only update Energistics model" option
         /// </summary>
         private void onlyUpdateEnergisticsModelOption()
@@ -609,14 +712,26 @@ namespace fesapiGenerator
         /// <param name="resqmlV2_0_1Package">Input resqml/v2.0.1 package</param>
         /// <param name="resqmlV2_2Package">Input resqml/v2.2 package</param>
         private void generateFesapiModel(
-            EA.Package commonModel, 
-            EA.Package commonV2Package, 
-            EA.Package commonV2_2Package, 
-            EA.Package resqmlModel, 
-            EA.Package resqmlV2_0_1Package, 
+            EA.Package commonModel,
+            EA.Package commonV2Package,
+            EA.Package commonV2_2Package,
+            EA.Package resqmlModel,
+            EA.Package resqmlV2_0_1Package,
             EA.Package resqmlV2_2Package)
         {
             Tool.log(repository, "Generate fesapi model (" + DateTime.Now.ToString() + ")...");
+
+            // getting the code configuration file
+            XmlDocument codeConfigurationFile = new XmlDocument();
+            try
+            {
+                codeConfigurationFile.Load("fesapiCodeConfiguration.xml");
+            }
+            catch (Exception)
+            {
+                Tool.showMessageBox(repository, "fesapiCodeConfiguration.xml is missing!");
+                return;
+            }
 
             // looking for an existing fesapi model
             EA.Package fesapiModel;
@@ -624,7 +739,7 @@ namespace fesapiGenerator
             {
                 fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
             }
-            catch  (Exception)
+            catch (Exception)
             {
                 fesapiModel = null;
             }
@@ -686,22 +801,22 @@ namespace fesapiGenerator
             fesapiModel.Packages.Refresh();
             repository.Models.Refresh();
 
-            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(repository, commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package, fesapiModel, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
+            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(codeConfigurationFile, repository, commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package, fesapiModel, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
             fesapiModelGenerator.generateFesapiModel();
 
             Tool.log(repository, "fesapi model generated (" + DateTime.Now.ToString() + ").");
         }
 
         private void updateFesapiModel(
-            EA.Package fesapiModel, 
-            EA.Package fesapiCommonPackage, 
-            EA.Package fesapiResqml2Package, 
-            EA.Package fesapiResqml2_0_1Package, 
+            EA.Package fesapiModel,
+            EA.Package fesapiCommonPackage,
+            EA.Package fesapiResqml2Package,
+            EA.Package fesapiResqml2_0_1Package,
             EA.Package fesapiResqml2_2Package,
-            EA.Package customFesapiModel, 
-            EA.Package customFesapiCommonPackage, 
-            EA.Package customFesapiResqml2Package, 
-            EA.Package customFesapiResqml2_0_1Package, 
+            EA.Package customFesapiModel,
+            EA.Package customFesapiCommonPackage,
+            EA.Package customFesapiResqml2Package,
+            EA.Package customFesapiResqml2_0_1Package,
             EA.Package customFesapiResqml2_2Package)
         {
             Tool.log(repository, "Updating fesapi model (" + DateTime.Now.ToString() + ")...");
@@ -957,7 +1072,7 @@ namespace fesapiGenerator
                     c.Genfile = outputPath + "\\" + c.Name + ".h";
                 else // other classes are generated into a sub-directory named according to the namespace of fesapiNamespace tag value
                     c.Genfile = outputPath + "\\" + fesapiNamespaceTag.Value + "\\" + c.Name + ".h";
-                
+
                 if (!(c.Update()))
                 {
                     Tool.showMessageBox(repository, c.GetLastError());

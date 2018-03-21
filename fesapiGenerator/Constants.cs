@@ -195,26 +195,5 @@ namespace fesapiGenerator
         /// user AppData\Roaming\ folder
         /// </summary>
         public const string configurationFilePath = "\\Sparx Systems\\EA\\fesapiGeneratorConfiguration.xml";
-
-        /// <summary>
-        /// gSOAP prefix for generated Eml v2.0 proxies
-        /// </summary>
-        public const string eml20GsoapPrefix = "gsoap_resqml2_0_1::eml20__";
-        
-        /// <summary>
-        /// gSOAP prefix for generated Eml v2.2 proxies
-        /// </summary>
-        public const string eml22GsoapPrefix = "gsoap_eml2_2::eml22__";
-        
-        /// <summary>
-        /// gSOAP prefix for generated Resqml v2.0.1 proxies
-        /// </summary>
-        public const string resqml2_0_1GsoapPrefix = "gsoap_resqml2_0_1::_resqml2__";
-
-        /// <summary>
-        /// gSOAP prefix for generated Resqml v2.2 proxies
-        /// </summary>
-        public const string resqml2_2GsoapPrefix = "gsoap_eml2_2::_resqml2__";
-
     }
 }
