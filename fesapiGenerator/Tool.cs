@@ -455,5 +455,17 @@ namespace fesapiGenerator
         {
             return (c.Type == "Class" && c.Name.StartsWith("Abstract"));
         }
+
+        static public bool isMeasureType(EA.Element type)
+        {
+            if (type.BaseClasses.Count != 1)
+            {
+                return false;
+            }
+
+            EA.Element baseType = type.BaseClasses.GetAt(0);
+
+            return (baseType.Name.Equals("Measure") || baseType.Name.Equals("AbstractMeasure"));
+        }
     }
 }

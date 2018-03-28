@@ -371,19 +371,19 @@ namespace fesapiGenerator
                 return;
             }
 
-            // since subsequent operations are time consuming, we need to set tup
-            // a progress bar
-            ProgressDialog progressDialog = new ProgressDialog();
-            Thread backgroundThread = new Thread(
-                new ThreadStart(() =>
-                {
+            //// since subsequent operations are time consuming, we need to set tup
+            //// a progress bar
+            //ProgressDialog progressDialog = new ProgressDialog();
+            //Thread backgroundThread = new Thread(
+            //    new ThreadStart(() =>
+            //    {
                     generateFesapiModel(commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package);
 
-                    // closing progress bar dialog
-                    progressDialog.BeginInvoke(new Action(() => progressDialog.Close()));
-                }));
-            backgroundThread.Start();
-            progressDialog.ShowDialog();
+            //        // closing progress bar dialog
+            //        progressDialog.BeginInvoke(new Action(() => progressDialog.Close()));
+            //    }));
+            //backgroundThread.Start();
+            //progressDialog.ShowDialog();
 
             // make sure the model view is up to date in the Enterprise Architect GUI
             repository.RefreshModelView(0);
