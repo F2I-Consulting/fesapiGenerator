@@ -338,7 +338,7 @@ namespace fesapiGenerator
 
         //    OpenFileDialog openFileDialog = new OpenFileDialog();
         //    openFileDialog.Title = "Please select code generation configuration file"; 
-           
+
         //}
 
         /// <summary>
@@ -410,12 +410,6 @@ namespace fesapiGenerator
                 return proc.MainWindowHandle;
         }
 
-        static public bool isBasicType(string type)
-        {
-            return (type.Equals("double") ||
-                type.Equals("boolean"));
-        }
-
         static public string uppercaseFirstLetter(string s)
         {
             if (string.IsNullOrEmpty(s))
@@ -424,19 +418,6 @@ namespace fesapiGenerator
             }
 
             return char.ToUpper(s[0]) + s.Substring(1);
-        }
-
-        //TODO: need for a conversion table (within XML configuration file?) 
-        static public string umlToCppType(string umlType)
-        {
-            if (umlType.Equals("boolean"))
-            {
-                return "bool";
-            }
-            else
-            {
-                return umlType;
-            }
         }
 
         //TODO: for the time being we consider that two methods are equal iff they have the same name
@@ -466,6 +447,79 @@ namespace fesapiGenerator
             EA.Element baseType = type.BaseClasses.GetAt(0);
 
             return (baseType.Name.Equals("Measure") || baseType.Name.Equals("AbstractMeasure"));
+        }
+
+
+        static public string isBasicTypeRec(EA.Repository repository, EA.Element type)
+        {
+            int targetId = -1;
+
+            foreach (EA.Connector currentConnector in type.Connectors)
+            {
+                if (currentConnector.Type.Equals("Generalization") && (currentConnector.ClientID == type.ElementID))
+                {
+                    targetId = currentConnector.SupplierID;
+                    break;
+                }
+            }
+
+            if (targetId == -1)
+            {
+                return isBasicType(type.Genlinks.Replace("Parent=","").Replace(";",""));
+            }
+            else
+            {
+                return isBasicTypeRec(repository, repository.GetElementByID(targetId));
+            }
+        }
+
+        static public string isBasicType(string type)
+        {
+            if (type.Equals("double") || type.Equals("long") || type.Equals("string"))
+                return type;
+
+            if (type.Equals("integer"))
+                return "int";
+            
+            // TODO: precision loss
+            if (type.Equals("positiveInteger") || type.Equals("nonNegativeInteger"))
+                return "unsigned int";
+
+            if (type.Equals("boolean"))
+                return "bool";
+
+            if (type.Equals("anyURI"))
+                return "string";
+
+            return "";
+        }
+
+        static public string isBasicType(EA.Repository repository, EA.Element type)
+        {
+            if (!(type.Stereotype.Equals("XSDsimpleType") || type.StereotypeEx.Contains("XSDsimpleType")))
+                return "";
+
+            else return isBasicTypeRec(repository, type);
+        }
+
+        static public string getBasicType(EA.Repository repository, EA.Attribute attribute)
+        {
+            string basicType = isBasicType(attribute.Type);
+            if (basicType != "")
+            {
+                return basicType;
+            }
+
+            if (attribute.ClassifierID != 0)
+            {
+                EA.Element typeClass = repository.GetElementByID(attribute.ClassifierID);
+
+                return isBasicType(repository, typeClass);
+            }
+            else
+            {
+                return "";
+            }
         }
     }
 }
