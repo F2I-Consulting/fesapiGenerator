@@ -521,5 +521,143 @@ namespace fesapiGenerator
                 return "";
             }
         }
+
+        static private string getGsoapNameRec(EA.Repository repository, EA.Element element, EA.Package package)
+        {
+            if (package.Name.Equals("v2.0") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
+            {
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                {
+                    return "gsoap_resqml2_0_1::_eml20__" + element.Name;
+                }
+                else
+                {
+                    return "gsoap_resqml2_0_1::eml20__" + element.Name;
+                }
+            }
+
+            if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
+            {
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                {
+                    return "gsoap_eml2_2::_eml22__" + element.Name;
+                }
+                else
+                {
+                    return "gsoap_eml2_2::eml22__" + element.Name;
+                }
+            }
+
+            if (package.Name.Equals("v2.0.1") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
+            {
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                {
+                    return "gsoap_resqml2_0_1::_resqml2__" + element.Name;
+                }
+                else
+                {
+                    return "gsoap_resqml2_0_1::resqml2__" + element.Name;
+                }
+            }
+
+            if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
+            {
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                {
+                    return "gsoap_eml2_2::_resqml2__" + element.Name;
+                }
+                else
+                {
+                    return "gsoap_eml2_2::resqml2__" + element.Name;
+                }
+            }
+
+            //// TODO: handle with exception
+            //if (package.ParentID == 0)
+            //    ...
+           
+            return getGsoapNameRec(repository, element, repository.GetPackageByID(package.ParentID));
+        }
+
+        // TODO: est-ce que le nom getGsoap "Class' Name est bien adapaté ?
+        static public string getGsoapClassName(EA.Repository repository, EA.Element element)
+        {
+            EA.Package package = repository.GetPackageByID(element.PackageID);
+
+            return getGsoapNameRec(repository, element, package);
+        }
+
+        static private string getGsoapProxyNameRec(EA.Repository repository, EA.Element element, EA.Package package)
+        {
+            if (package.Name.Equals("v2.0") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
+            {
+                // TODO: aller chercher dans le xml ?
+                return "gsoapProxy2_0_1";
+            }
+
+            if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
+            {
+                return "gsoapProxy2_2";
+            }
+
+            if (package.Name.Equals("v2.0.1") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
+            {
+                return "gsoapProxy2_0_1";
+            }
+
+            if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
+            {
+                return "gsoapProxy2_2";
+            }
+
+            // TODO: handle with exception
+            //if (package.ParentID == 0)
+            //    ...
+
+            return getGsoapProxyNameRec(repository, element, repository.GetPackageByID(package.ParentID));
+        }
+
+        static public string getGsoapProxyName(EA.Repository repository, EA.Element element)
+        {
+            EA.Package package = repository.GetPackageByID(element.PackageID);
+
+            return getGsoapProxyNameRec(repository, element, package);
+        }
+
+        static public string getGsoapEnum2SConverterName(EA.Repository repository, EA.Element enumElement)
+        {
+            //TODO: vérifier que le type element est bien un enum ?
+
+            return getGsoapClassName(repository, enumElement).Replace("::", "::soap_") + "2s";
+        }
+
+        static public string getGsoapS2EnumConverterName(EA.Repository repository, EA.Element enumElement)
+        {
+            //TODO: vérifier que le type element est bien un enum ?
+
+            return getGsoapClassName(repository, enumElement).Replace("::", "::soap_s2");
+        }
+
+        //get enum type from Ext one
+        static public EA.Element getEnumType(EA.Repository repository, EA.Element unionElement)
+        {
+            foreach (EA.Connector currentConnector in unionElement.Connectors)
+            {
+                if (currentConnector.Type.Equals("Generalization") && (currentConnector.ClientID == unionElement.ElementID))
+                {
+                    EA.Element targetElement = repository.GetElementByID(currentConnector.SupplierID);
+                    if (targetElement.Type.Equals("enumeration") ||
+                        targetElement.Type.Equals("Enumeration") || 
+                        targetElement.Stereotype.Equals("enumeration") || 
+                        targetElement.Stereotype.Equals("Enumeration"))
+                    {
+                        return targetElement;
+                    }
+                }
+            }
+
+            //TODO cas d'erreur
+            return null;
+        }
     }
 }
