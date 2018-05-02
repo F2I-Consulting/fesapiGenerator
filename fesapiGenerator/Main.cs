@@ -721,18 +721,6 @@ namespace fesapiGenerator
         {
             Tool.log(repository, "Generate fesapi model (" + DateTime.Now.ToString() + ")...");
 
-            // getting the code configuration file
-            XmlDocument codeConfigurationFile = new XmlDocument();
-            try
-            {
-                codeConfigurationFile.Load("fesapiCodeConfiguration.xml");
-            }
-            catch (Exception)
-            {
-                Tool.showMessageBox(repository, "fesapiCodeConfiguration.xml is missing!");
-                return;
-            }
-
             // looking for an existing fesapi model
             EA.Package fesapiModel;
             try
@@ -801,7 +789,7 @@ namespace fesapiGenerator
             fesapiModel.Packages.Refresh();
             repository.Models.Refresh();
 
-            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(codeConfigurationFile, repository, commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package, fesapiModel, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
+            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(repository, commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package, fesapiModel, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
             fesapiModelGenerator.generateFesapiModel();
 
             Tool.log(repository, "fesapi model generated (" + DateTime.Now.ToString() + ").");

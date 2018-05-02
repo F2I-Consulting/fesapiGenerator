@@ -439,7 +439,7 @@ namespace fesapiGenerator
 
         static public bool isMeasureType(EA.Element type)
         {
-            if (type.BaseClasses.Count != 1)
+            if (type == null || type.BaseClasses.Count != 1)
             {
                 return false;
             }
@@ -475,15 +475,15 @@ namespace fesapiGenerator
 
         static public string isBasicType(string type)
         {
-            if (type.Equals("double") || type.Equals("long") || type.Equals("string"))
+            if (type.Equals("int") || type.Equals("double") || type.Equals("long") || type.Equals("string"))
                 return type;
 
             if (type.Equals("integer"))
                 return "int";
             
-            // TODO: precision loss
-            if (type.Equals("positiveInteger") || type.Equals("nonNegativeInteger"))
-                return "unsigned int";
+            // TODO: faire plus de tests et utiliser fichier de mappage issu de la génération des proxy
+            if (type.Equals("positiveInteger") || type.Equals("PositiveInteger") || type.Equals("nonNegativeInteger") || type.Equals("NonNegativeInteger") || type.Equals("positiveLong") || type.Equals("PositiveLong"))
+                return "ULONG64";
 
             if (type.Equals("boolean"))
                 return "bool";
@@ -526,7 +526,7 @@ namespace fesapiGenerator
         {
             if (package.Name.Equals("v2.0") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
             {
-                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")) && !(isEnum(element)))
                 {
                     return "gsoap_resqml2_0_1::_eml20__" + element.Name;
                 }
@@ -538,7 +538,7 @@ namespace fesapiGenerator
 
             if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
             {
-                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")) && !(isEnum(element)))
                 {
                     return "gsoap_eml2_2::_eml22__" + element.Name;
                 }
@@ -550,7 +550,7 @@ namespace fesapiGenerator
 
             if (package.Name.Equals("v2.0.1") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
             {
-                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")) && !(isEnum(element)))
                 {
                     return "gsoap_resqml2_0_1::_resqml2__" + element.Name;
                 }
@@ -562,7 +562,7 @@ namespace fesapiGenerator
 
             if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
             {
-                if (element.Type == "Class" && !(element.Name.Contains("Abstract")))
+                if (element.Type == "Class" && !(element.Name.Contains("Abstract")) && !(isEnum(element)))
                 {
                     return "gsoap_eml2_2::_resqml2__" + element.Name;
                 }
@@ -658,6 +658,11 @@ namespace fesapiGenerator
 
             //TODO cas d'erreur
             return null;
+        }
+
+        public static bool isEnum(EA.Element type)
+        {
+            return (type.Type.Equals("enumeration") || type.Type.Equals("Enumeration") || type.Stereotype.Equals("Enumeration") || type.Stereotype.Equals("enumeration") || type.StereotypeEx.Equals("Enumeration") || type.StereotypeEx.Equals("enumeration"));
         }
     }
 }
