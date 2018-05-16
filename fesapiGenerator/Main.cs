@@ -262,11 +262,11 @@ namespace fesapiGenerator
             try
             {
                 commonModel = repository.Models.GetByName(Constants.commonModelName);
-                commonV2Package = commonModel.Packages.GetByName(Constants.commonV2PackageName);
-                commonV2_2Package = commonModel.Packages.GetByName(Constants.commonV2_2PackageName);
+                commonV2Package = commonModel.Packages.GetByName(Constants.common2PackageName);
+                commonV2_2Package = commonModel.Packages.GetByName(Constants.common2_2PackageName);
                 resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
-                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_0_1PackageName);
-                resqmlV2_2Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_2PackageName);
+                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqml2_0_1PackageName);
+                resqmlV2_2Package = resqmlModel.Packages.GetByName(Constants.resqml2_2PackageName);
             }
             catch (Exception)
             {
@@ -359,11 +359,11 @@ namespace fesapiGenerator
             try
             {
                 commonModel = repository.Models.GetByName(Constants.commonModelName);
-                commonV2Package = commonModel.Packages.GetByName(Constants.commonV2PackageName);
-                commonV2_2Package = commonModel.Packages.GetByName(Constants.commonV2_2PackageName);
+                commonV2Package = commonModel.Packages.GetByName(Constants.common2PackageName);
+                commonV2_2Package = commonModel.Packages.GetByName(Constants.common2_2PackageName);
                 resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
-                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_0_1PackageName);
-                resqmlV2_2Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_2PackageName);
+                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqml2_0_1PackageName);
+                resqmlV2_2Package = resqmlModel.Packages.GetByName(Constants.resqml2_2PackageName);
             }
             catch (Exception)
             {
@@ -502,9 +502,9 @@ namespace fesapiGenerator
             try
             {
                 commonModel = repository.Models.GetByName(Constants.commonModelName);
-                commonV2Package = commonModel.Packages.GetByName(Constants.commonV2PackageName);
+                commonV2Package = commonModel.Packages.GetByName(Constants.common2PackageName);
                 resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
-                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_0_1PackageName);
+                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqml2_0_1PackageName);
                 fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
             }
             catch (Exception)
@@ -531,8 +531,8 @@ namespace fesapiGenerator
                     EA.Package updatedResqmlV2_0_1Package;
                     try
                     {
-                        updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommonV2PackageName);
-                        updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqmlV2_0_1PackageName);
+                        updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommon2PackageName);
+                        updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqml2_0_1PackageName);
                     }
                     catch (Exception)
                     {
@@ -589,9 +589,9 @@ namespace fesapiGenerator
             try
             {
                 commonModel = repository.Models.GetByName(Constants.commonModelName);
-                commonV2Package = commonModel.Packages.GetByName(Constants.commonV2PackageName);
+                commonV2Package = commonModel.Packages.GetByName(Constants.common2PackageName);
                 resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
-                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqmlV2_0_1PackageName);
+                resqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.resqml2_0_1PackageName);
                 fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
             }
             catch (Exception)
@@ -638,9 +638,9 @@ namespace fesapiGenerator
             try
             {
                 commonModel = repository.Models.GetByName(Constants.commonModelName);
-                updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommonV2PackageName);
+                updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommon2PackageName);
                 resqmlModel = repository.Models.GetByName(Constants.resqmlModelName);
-                updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqmlV2_0_1PackageName);
+                updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqml2_0_1PackageName);
                 fesapiModel = repository.Models.GetByName(Constants.fesapiModelName);
             }
             catch (Exception)
@@ -789,7 +789,7 @@ namespace fesapiGenerator
             fesapiModel.Packages.Refresh();
             repository.Models.Refresh();
 
-            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(repository, commonModel, commonV2Package, commonV2_2Package, resqmlModel, resqmlV2_0_1Package, resqmlV2_2Package, fesapiModel, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
+            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(repository, resqmlV2_0_1Package, resqmlV2_2Package, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
             fesapiModelGenerator.generateFesapiModel();
 
             Tool.log(repository, "fesapi model generated (" + DateTime.Now.ToString() + ").");
@@ -865,7 +865,7 @@ namespace fesapiGenerator
             EA.Package updatedCommonV2Package;
             try
             {
-                updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommonV2PackageName);
+                updatedCommonV2Package = commonModel.Packages.GetByName(Constants.updatedCommon2PackageName);
             }
             catch (Exception)
             {
@@ -894,14 +894,14 @@ namespace fesapiGenerator
             string commonV2PackageGUID = commonV2Package.PackageGUID;
             foreach (EA.Package p in commonModel.Packages)
             {
-                if (p.Name == Constants.commonV2PackageName && p.PackageGUID != commonV2PackageGUID)
+                if (p.Name == Constants.common2PackageName && p.PackageGUID != commonV2PackageGUID)
                 {
                     updatedCommonV2Package = p;
                     break;
                 }
             }
 
-            updatedCommonV2Package.Name = Constants.updatedCommonV2PackageName;
+            updatedCommonV2Package.Name = Constants.updatedCommon2PackageName;
             if (!(updatedCommonV2Package.Update()))
             {
                 Tool.showMessageBox(repository, updatedCommonV2Package.GetLastError());
@@ -912,7 +912,7 @@ namespace fesapiGenerator
             EA.Package updatedResqmlV2_0_1Package;
             try
             {
-                updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqmlV2_0_1PackageName);
+                updatedResqmlV2_0_1Package = resqmlModel.Packages.GetByName(Constants.updatedResqml2_0_1PackageName);
             }
             catch (Exception)
             {
@@ -939,14 +939,14 @@ namespace fesapiGenerator
             string resqmlV2_0_1PackageGUID = resqmlV2_0_1Package.PackageGUID;
             foreach (EA.Package p in resqmlModel.Packages)
             {
-                if (p.Name == Constants.resqmlV2_0_1PackageName && p.PackageGUID != resqmlV2_0_1PackageGUID)
+                if (p.Name == Constants.resqml2_0_1PackageName && p.PackageGUID != resqmlV2_0_1PackageGUID)
                 {
                     updatedResqmlV2_0_1Package = p;
                     break;
                 }
             }
 
-            updatedResqmlV2_0_1Package.Name = Constants.updatedResqmlV2_0_1PackageName;
+            updatedResqmlV2_0_1Package.Name = Constants.updatedResqml2_0_1PackageName;
             if (!(updatedResqmlV2_0_1Package.Update()))
             {
                 Tool.showMessageBox(repository, updatedResqmlV2_0_1Package.GetLastError());

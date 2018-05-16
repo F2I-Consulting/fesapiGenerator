@@ -25,7 +25,7 @@ namespace fesapiGenerator
     /// </summary>
     public static class Constants
     {
-        #region models and packages names
+        #region models, packages and classes names
 
         /// <summary>
         /// Name of the Energistics common model
@@ -35,17 +35,17 @@ namespace fesapiGenerator
         /// <summary>
         /// Name of the Energistics common/V2.0 package
         /// </summary>
-        public const string commonV2PackageName = "v2.0";
+        public const string common2PackageName = "v2.0";
 
         /// <summary>
         /// Name of the Energistics common/V2.2 package
         /// </summary>
-        public const string commonV2_2PackageName = "v2.2";
+        public const string common2_2PackageName = "v2.2";
 
         /// <summary>
         /// Name of the updated Energistics common/v2.0 package
         /// </summary>
-        public const string updatedCommonV2PackageName = "updated v2.0";
+        public const string updatedCommon2PackageName = "updated v2.0";
 
         /// <summary>
         /// Name of the Energistics resqml model
@@ -55,17 +55,17 @@ namespace fesapiGenerator
         /// <summary>
         /// Name of the Energistics resqml/v2.0.1 package
         /// </summary>
-        public const string resqmlV2_0_1PackageName = "v2.0.1";
+        public const string resqml2_0_1PackageName = "v2.0.1";
 
         /// <summary>
         /// Name of the Energistics resqml/v2.2 package
         /// </summary>
-        public const string resqmlV2_2PackageName = "v2.2";
+        public const string resqml2_2PackageName = "v2.2";
 
         /// <summary>
         /// Name of the updated Energistics resqml/v2.0.1 package
         /// </summary>
-        public const string updatedResqmlV2_0_1PackageName = "updated v2.0.1";
+        public const string updatedResqml2_0_1PackageName = "updated v2.0.1";
 
         /// <summary>
         /// Name of the fesapi model
@@ -133,6 +133,34 @@ namespace fesapiGenerator
         /// Name of the transformed C++ Energistics model
         /// </summary>
         public const string cppEnergisticsModelName = "c++ energistics";
+
+        /// <summary>
+        /// Name of the abstract object class in the Resqml 2.0.1 model
+        /// </summary>
+        public const string energisticsResqml2_0_1AbstractObjectClassName = "AbstractResqmlDataObject";
+
+        /// <summary>
+        /// Name of the abstract object class in the Resqml 2.2 model
+        /// </summary>
+        public const string energisticsResqml2_2AbstractObjectClassName = "AbstractObject";
+
+        #endregion
+
+        #region gsoap tags
+
+        /// <summary>
+        /// gSOAP prefix for Eml 2.0 classes
+        /// </summary>
+        public const string gsoapEqml2_0Prefix = "gsoap_resqml2_0_1::eml20__";
+
+        /// <summary>
+        /// gSOAP prefix for Eml 2.2 classes
+        /// </summary>
+        public const string gsoapEqml2_2Prefix = "gsoap_eml2_2::eml22__";
+
+        public const string gsoapProxy2_0_1 = "gsoapProxy2_0_1";
+
+        public const string gsoapProxy2_2 = "gsoapProxy2_2";
 
         #endregion
 

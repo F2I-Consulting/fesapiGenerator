@@ -305,12 +305,14 @@ namespace fesapiGenerator
         /// <summary>
         /// This method fills a pre-instantied list with the elements carried in a given
         /// package. It proceed recursively for each sub-package. Type of element can be
-        /// filtered. Classes can be filtered thanks to a given stereotype.
+        /// filtered. When filtering classes, one can choose to filter only top level
+        /// classes.
         /// </summary>
         /// <param name="package">A package</param>
         /// <param name="list">A pre-instantied list</param>
         /// <param name="type">A type of element to consider (empty string if none)</param>
-        public static void fillElementList(EA.Package package, List<EA.Element> list, string type = "", string stereotype = "")
+        /// <param name="matchTopLevelClassOnly">true for filtering only top level classes, else false. This parameter is read only iff type == "class".</param>
+        public static void fillElementList(EA.Package package, List<EA.Element> list, string type = "", bool matchTopLevelClassOnly = false)
         {
             if (type == "")
             {
@@ -321,25 +323,56 @@ namespace fesapiGenerator
             {
                 foreach (EA.Element c in package.Elements)
                 {
-                    if (c.Type == "Class")
-                        if (stereotype != "" && c.StereotypeEx.Contains(stereotype))
+                    if (c.Type.Equals(type))
+                    {
+                        if (matchTopLevelClassOnly)
+                        {
+                            if (Tool.isTopLevelClass(c))
+                            {
+                                list.Add(c);
+                            }
+                        }
+                        else
+                        {
                             list.Add(c);
+                        }
+                    } 
                 }
             }
 
             // proceed recursively
             foreach (EA.Package p in package.Packages)
-                fillElementList(p, list, type, stereotype);
+                fillElementList(p, list, type, matchTopLevelClassOnly);
         }
 
-        //public static string getCodeConfigurationFilePath()
-        //{
-        //    string codeConfigurationPath = " ";
+        /// <summary>
+        /// Test if one given class is a top level one. Rule: a class is top level
+        /// iff it contains the stereotype "XSDtopLevelElement" or at least one of his 
+        /// ancestors is top level. 
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
+        public static bool isTopLevelClass(EA.Element c)
+        {
+            if (c.Type != "Class")
+                return false;
 
-        //    OpenFileDialog openFileDialog = new OpenFileDialog();
-        //    openFileDialog.Title = "Please select code generation configuration file"; 
+            if (c.Stereotype.Contains("XSDtopLevelElement") || c.StereotypeEx.Contains("XSDtopLevelElement"))
+                return true;
 
-        //}
+            // if c is not stereotyped with XSDtopLevelElement and it has no parent, it is not a top level class
+            if (c.BaseClasses.Count == 0)
+                return false;
+
+            // if one of the c ancestor is a top level class, c is a top level class
+            foreach (EA.Element parentClass in c.BaseClasses)
+            {
+                if (isTopLevelClass(parentClass))
+                    return true;
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// This methods asks the user for a generated sources output path. It first looks for
@@ -449,6 +482,27 @@ namespace fesapiGenerator
             return (baseType.Name.Equals("Measure") || baseType.Name.Equals("AbstractMeasure"));
         }
 
+        //TODO:use proxy generation mapping configuration
+        static public string isBasicType(string type)
+        {
+            if (type.Equals("int") || type.Equals("double") || type.Equals("long") || type.Equals("string"))
+                return type;
+
+            if (type.Equals("integer"))
+                return "int";
+
+            
+            if (type.Equals("positiveInteger") || type.Equals("PositiveInteger") || type.Equals("nonNegativeInteger") || type.Equals("NonNegativeInteger") || type.Equals("positiveLong") || type.Equals("PositiveLong"))
+                return "ULONG64";
+
+            if (type.Equals("boolean"))
+                return "bool";
+
+            if (type.Equals("anyURI"))
+                return "string";
+
+            return "";
+        }
 
         static public string isBasicTypeRec(EA.Repository repository, EA.Element type)
         {
@@ -472,28 +526,7 @@ namespace fesapiGenerator
                 return isBasicTypeRec(repository, repository.GetElementByID(targetId));
             }
         }
-
-        static public string isBasicType(string type)
-        {
-            if (type.Equals("int") || type.Equals("double") || type.Equals("long") || type.Equals("string"))
-                return type;
-
-            if (type.Equals("integer"))
-                return "int";
-            
-            // TODO: faire plus de tests et utiliser fichier de mappage issu de la génération des proxy
-            if (type.Equals("positiveInteger") || type.Equals("PositiveInteger") || type.Equals("nonNegativeInteger") || type.Equals("NonNegativeInteger") || type.Equals("positiveLong") || type.Equals("PositiveLong"))
-                return "ULONG64";
-
-            if (type.Equals("boolean"))
-                return "bool";
-
-            if (type.Equals("anyURI"))
-                return "string";
-
-            return "";
-        }
-
+        
         static public string isBasicType(EA.Repository repository, EA.Element type)
         {
             if (!(type.Stereotype.Equals("XSDsimpleType") || type.StereotypeEx.Contains("XSDsimpleType")))
@@ -579,8 +612,7 @@ namespace fesapiGenerator
             return getGsoapNameRec(repository, element, repository.GetPackageByID(package.ParentID));
         }
 
-        // TODO: est-ce que le nom getGsoap "Class' Name est bien adapaté ?
-        static public string getGsoapClassName(EA.Repository repository, EA.Element element)
+        static public string getGsoapName(EA.Repository repository, EA.Element element)
         {
             EA.Package package = repository.GetPackageByID(element.PackageID);
 
@@ -589,25 +621,24 @@ namespace fesapiGenerator
 
         static private string getGsoapProxyNameRec(EA.Repository repository, EA.Element element, EA.Package package)
         {
-            if (package.Name.Equals("v2.0") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
+            if (package.Name.Equals(Constants.common2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.commonModelName))
             {
-                // TODO: aller chercher dans le xml ?
-                return "gsoapProxy2_0_1";
+                return Constants.gsoapProxy2_0_1;
             }
 
-            if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
+            if (package.Name.Equals(Constants.common2_2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.commonModelName))
             {
-                return "gsoapProxy2_2";
+                return Constants.gsoapProxy2_2;
             }
 
-            if (package.Name.Equals("v2.0.1") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
+            if (package.Name.Equals(Constants.resqml2_0_1PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.resqmlModelName))
             {
-                return "gsoapProxy2_0_1";
+                return Constants.gsoapProxy2_0_1;
             }
 
-            if (package.Name.Equals("v2.2") && repository.GetPackageByID(package.ParentID).Name.Equals("resqml"))
+            if (package.Name.Equals(Constants.resqml2_2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.resqmlModelName))
             {
-                return "gsoapProxy2_2";
+                return Constants.gsoapProxy2_2;
             }
 
             // TODO: handle with exception
@@ -626,20 +657,15 @@ namespace fesapiGenerator
 
         static public string getGsoapEnum2SConverterName(EA.Repository repository, EA.Element enumElement)
         {
-            //TODO: vérifier que le type element est bien un enum ?
-
-            return getGsoapClassName(repository, enumElement).Replace("::", "::soap_") + "2s";
+            return getGsoapName(repository, enumElement).Replace("::", "::soap_") + "2s";
         }
 
         static public string getGsoapS2EnumConverterName(EA.Repository repository, EA.Element enumElement)
         {
-            //TODO: vérifier que le type element est bien un enum ?
-
-            return getGsoapClassName(repository, enumElement).Replace("::", "::soap_s2");
+            return getGsoapName(repository, enumElement).Replace("::", "::soap_s2");
         }
 
-        //get enum type from Ext one
-        static public EA.Element getEnumType(EA.Repository repository, EA.Element unionElement)
+        static public EA.Element getEnumTypeFromEnumExtType(EA.Repository repository, EA.Element unionElement)
         {
             foreach (EA.Connector currentConnector in unionElement.Connectors)
             {
@@ -656,7 +682,6 @@ namespace fesapiGenerator
                 }
             }
 
-            //TODO cas d'erreur
             return null;
         }
 
