@@ -470,6 +470,20 @@ namespace fesapiGenerator
             return (c.Type == "Class" && c.Name.StartsWith("Abstract"));
         }
 
+        static public bool isLeaf(EA.Element c)
+        {
+            foreach (EA.Connector connector in c.Connectors)
+            {
+                if (connector.Type.Equals("Generalization") && (connector.SupplierID == c.ElementID))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
         static public bool isMeasureType(EA.Element type)
         {
             if (type == null || type.BaseClasses.Count != 1)
