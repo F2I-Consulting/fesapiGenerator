@@ -141,8 +141,8 @@ namespace fesapiGenerator
                 // ***************************************************************************************************************************************************************
                 // ***************************************************************************************************************************************************************
                 // DEBUG: uncomment to accelerate process by focusing on Local3dCrs classes
-                if (!(energisticsClassName.Equals("AbstractLocal3dCrs")) && !(energisticsClassName.Equals("LocalDepth3dCrs")) && !(energisticsClassName.Equals("LocalTime3dCrs")) && !(energisticsClassName.Equals("AbstractProperty")))
-                    continue;
+                //if (!(energisticsClassName.Equals("AbstractLocal3dCrs")) && !(energisticsClassName.Equals("LocalDepth3dCrs")) && !(energisticsClassName.Equals("LocalTime3dCrs")) && !(energisticsClassName.Equals("AbstractProperty")))
+                //    continue;
                 // ***************************************************************************************************************************************************************
                 // ***************************************************************************************************************************************************************
 
@@ -198,26 +198,26 @@ namespace fesapiGenerator
                 }
             }
 
-            //// we look at remaining resqml 2.2 classes (classes whose are not common with resqml 2.0.1)
-            //foreach (EA.Element energisticsResqml2_2Class in energisticsResqml2_2ClassList)
-            //{
-            //    string energisticsClassName = energisticsResqml2_2Class.Name;
+            // we look at remaining resqml 2.2 classes (classes whose are not common with resqml 2.0.1)
+            foreach (EA.Element energisticsResqml2_2Class in energisticsResqml2_2ClassList)
+            {
+                string energisticsClassName = energisticsResqml2_2Class.Name;
 
-            //    // does it exists such a class in resqml 2.0.1
-            //    EA.Element energisticsResqml2_0_1Class = energisticsResqml2_0_1ClassList.Find(c => c.Name.Equals(energisticsClassName));
-            //    if (energisticsResqml2_0_1Class == null)
-            //    {
-            //        //if no, it only belongs to fesapi/resqml2_2
-            //        EA.Element fesapiResqml2_2Class = addFesapiClass(energisticsClassName, fesapiResqml2_2Package);
-            //        if (fesapiResqml2_2Class == null)
-            //        {
-            //            Tool.log(repository, "Unable to add " + energisticsClassName + " class in fesapi/Class Model/resqml2_2!");
-            //            continue;
-            //        }
-            //        fesapiResqml2_2ClassList.Add(fesapiResqml2_2Class);
-            //        fesapiResqml2_2toEnergisticsResqml2_2.Add(fesapiResqml2_2Class, energisticsResqml2_2Class);
-            //    }
-            //}
+                // does it exists such a class in resqml 2.0.1
+                EA.Element energisticsResqml2_0_1Class = energisticsResqml2_0_1ClassList.Find(c => c.Name.Equals(energisticsClassName));
+                if (energisticsResqml2_0_1Class == null)
+                {
+                    //if no, it only belongs to fesapi/resqml2_2
+                    EA.Element fesapiResqml2_2Class = addFesapiClass(energisticsClassName, fesapiResqml2_2Package);
+                    if (fesapiResqml2_2Class == null)
+                    {
+                        Tool.log(repository, "Unable to add " + energisticsClassName + " class in fesapi/Class Model/resqml2_2!");
+                        continue;
+                    }
+                    fesapiResqml2_2ClassList.Add(fesapiResqml2_2Class);
+                    fesapiResqml2_2toEnergisticsResqml2_2.Add(fesapiResqml2_2Class, energisticsResqml2_2Class);
+                }
+            }
 
             fesapiResqml2Package.Elements.Refresh();
             fesapiResqml2_0_1Package.Elements.Refresh();
@@ -227,6 +227,7 @@ namespace fesapiGenerator
             generateConstructorSet();
             generateXmlTagSet();
             generateGetterSet();
+            relationTest();
 
             // make sure the model view is up to date in the Enterprise Architect GUI
             repository.RefreshModelView(0);
@@ -958,11 +959,11 @@ namespace fesapiGenerator
 
                     if (energisticsResqml2_2Attribute != null)
                     {
-                        addResqmlGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute);
+                        addGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute);
                     }
                     else if (!(fesapiResqml2_0_1toEnergisticsResqml2_0_1.ContainsValue(energisticsResqml2_0_1Class)))
                     {
-                        addResqmlGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute);
+                        addGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute);
                     }
                 }
 
@@ -980,7 +981,7 @@ namespace fesapiGenerator
 
                     if (energisticsResqml2_0_1Attribute == null && (!(fesapiResqml2_2toEnergisticsResqml2_2.ContainsValue(energisticsResqml2_2Class))))
                     {
-                        addResqmlGetter(fesapiResqml2Class, energisticsResqml2_2Attribute);
+                        addGetter(fesapiResqml2Class, energisticsResqml2_2Attribute);
                     }
                 }
             }
@@ -1010,7 +1011,7 @@ namespace fesapiGenerator
 
                         if (energisticsResqml2_2Attribute == null)
                         {
-                            addResqmlGetter(fesapiResqml2_0_1Class, energisticsResqml2_0_1Attribute);
+                            addGetter(fesapiResqml2_0_1Class, energisticsResqml2_0_1Attribute);
                         }
                     }
                 }
@@ -1020,7 +1021,7 @@ namespace fesapiGenerator
 
                     foreach (EA.Attribute energisticsResqml2_0_1Attribute in energisticsResqml2_0_1Class.Attributes)
                     {
-                        addResqmlGetter(fesapiResqml2_0_1Class, energisticsResqml2_0_1Attribute);
+                        addGetter(fesapiResqml2_0_1Class, energisticsResqml2_0_1Attribute);
                     }
                 }
             }
@@ -1050,7 +1051,7 @@ namespace fesapiGenerator
 
                         if (energisticsResqml2_0_1Attribute == null)
                         {
-                            addResqmlGetter(fesapiResqml2_2Class, energisticsResqml2_2Attribute);
+                            addGetter(fesapiResqml2_2Class, energisticsResqml2_2Attribute);
                         }
                     }
                 }
@@ -1060,28 +1061,36 @@ namespace fesapiGenerator
 
                     foreach (EA.Attribute energisticsResqml2_2Attribute in energisticsResqml2_2Class.Attributes)
                     {
-                        addResqmlGetter(fesapiResqml2_2Class, energisticsResqml2_2Attribute);
+                        addGetter(fesapiResqml2_2Class, energisticsResqml2_2Attribute);
                     }
                 }
             }
         }
 
-        private void addResqmlGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
+        private void addGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
         {
             // get the fesapiClass package name for explciting log messages
             string packageName = repository.GetPackageByID(fesapiClass.PackageID).Name;
 
-            if (!(energisticsAttribute.LowerBound.Equals("1")) || !(energisticsAttribute.UpperBound.Equals("1")))
+            // checking wether the attribute is mandatory
+            bool isMandatory = true;
+            if (energisticsAttribute.LowerBound.Equals("0"))
             {
-                Tool.log(repository, "Getter generation for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + " class is not handle since it is not a mandatory attribute.");
-                return;
+                isMandatory = false;
+            }
+
+            // checking wether the attribute upper bound cardinality is 1
+            bool isSingle = true;
+            if (!(energisticsAttribute.UpperBound.Equals("1")))
+            {
+                isSingle = false;
             }
 
             string energisticsAttributeType = Tool.getBasicType(repository, energisticsAttribute);
             // if the type of the attribute is a basic type
             if (!(energisticsAttributeType.Equals("")))
             {
-                if (addResqmlBasicTypeGetter(fesapiClass, energisticsAttribute) == null)
+                if (addBasicTypeGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add basic type getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
                     return;    
@@ -1089,17 +1098,17 @@ namespace fesapiGenerator
             // else if the type of the attribute is a measure type
             } else if (Tool.isMeasureType(repository.GetElementByID(energisticsAttribute.ClassifierID)))
             {
-                if (addResqmlMeasureGetter(fesapiClass, energisticsAttribute) == null)
+                if (addMeasureGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add measure value getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
                     return;
                 }
-                if (addResqmlEnumGetter(fesapiClass, energisticsAttribute) == null)
+                if (addEnumGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add unit of measure getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
                     return;
                 }
-                if (addResqmlEnumGetterAsString(fesapiClass, energisticsAttribute) == null)
+                if (addEnumGetterAsString(fesapiClass, energisticsAttribute, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add string unit of measure getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
                     return;    
@@ -1108,12 +1117,12 @@ namespace fesapiGenerator
             // else if the type of the attribute is an enum type
             else if (Tool.isEnum(repository.GetElementByID(energisticsAttribute.ClassifierID)) || repository.GetElementByID(energisticsAttribute.ClassifierID).Name.EndsWith("Ext"))
             {
-                if (addResqmlEnumGetter(fesapiClass, energisticsAttribute) == null)
+                if (addEnumGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add enum value getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
                     return;
                 }
-                if (addResqmlEnumGetterAsString(fesapiClass, energisticsAttribute) == null)
+                if (addEnumGetterAsString(fesapiClass, energisticsAttribute, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add string enum value getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
                     return;
@@ -1121,11 +1130,20 @@ namespace fesapiGenerator
             }
             else
             {
-                Tool.log(repository, "Unable to properly getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                Tool.log(repository, "Unable to properly add getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                return;
+            }
+
+            if (!isSingle)
+            {
+                if (addCountGetter(fesapiClass, energisticsAttribute) == null)
+                {
+                    Tool.log(repository, "Unable to properly add count getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                }
             }
         }
 
-        private EA.Method addResqmlBasicTypeGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
+        private EA.Method addBasicTypeGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute, bool isMandatory, bool isSingle)
         {
             string attributeType = Tool.getBasicType(repository, energisticsAttribute);
             string attributeName = energisticsAttribute.Name;
@@ -1136,11 +1154,38 @@ namespace fesapiGenerator
             EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName, attributeType);
             getter.Code = "if (" + gsoapProxyName + " != null)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ";\n";
+
+            if (!isSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "[index];\n";
+                getter.Code += "\t}\n ";
+            }
+            else if (!isMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->*" + attributeName + ";\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ";\n";
+            }
+
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
             getter.Code += "}";
+
+            if (!isSingle)
+            {
+                getter.Code += "\nthrow out_of_range(\"The index is out of range\");";
+            }
+            else if (!isMandatory)
+            {
+                getter.Code += "\nthrow out_of_range(\"The " + attributeName + " atribute is not defined\");";
+            }
+
             getter.Stereotype = "const";
             if (!(getter.Update()))
             {
@@ -1148,6 +1193,18 @@ namespace fesapiGenerator
                 return null;
             }
             fesapiClass.Methods.Refresh();
+
+            if (!isSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
 
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
@@ -1160,7 +1217,7 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addResqmlMeasureGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
+        private EA.Method addMeasureGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute, bool isMandatory, bool isSingle)
         {
             string attributeName = energisticsAttribute.Name;
             EA.Element energisticsClass = repository.GetElementByID(energisticsAttribute.ParentID);
@@ -1170,11 +1227,38 @@ namespace fesapiGenerator
             EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName, "double");
             getter.Code = "if (" + gsoapProxyName + " != null)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->__item;\n";
+
+            if (!isSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "[index]->__item;\n";
+                getter.Code += "\t}\n ";
+            }
+            else if (!isMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->*" + attributeName + "->__item;\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->__item;\n";
+            }
+
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
             getter.Code += "}";
+
+            if (!isSingle)
+            {
+                getter.Code += "\nthrow out_of_range(\"The index is out of range\");";
+            }
+            else if (!isMandatory)
+            {
+                getter.Code += "\nthrow out_of_range(\"The " + attributeName + " atribute is not defined\");";
+            }
+
             getter.Stereotype = "const";
             if (!(getter.Update()))
             {
@@ -1182,6 +1266,18 @@ namespace fesapiGenerator
                 return null;
             }
             fesapiClass.Methods.Refresh();
+
+            if (!isSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
 
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
@@ -1194,7 +1290,7 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addResqmlEnumGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
+        private EA.Method addEnumGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute, bool isMandatory, bool isSingle)
         {
             EA.Element enumType = repository.GetElementByID(energisticsAttribute.ClassifierID);
             string attributeName = energisticsAttribute.Name;
@@ -1213,7 +1309,24 @@ namespace fesapiGenerator
                 getter.Code = "if (" + gsoapProxyName + " != null)\n";
                 getter.Code += "{\n";
                 getter.Code += "\t" + gsoapEnumName + " res;\n";
-                getter.Code += "\t" + gsoapS2EnumConverterName + "(" + gsoapProxyName + "->soap, " + "(satic_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ").c_str(), &res);\n";
+
+                if (!isSingle)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->size() > index) {\n";
+                    getter.Code += "\t\t" + gsoapS2EnumConverterName + "(" + gsoapProxyName + "->soap, " + "(satic_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "[index]).c_str(), &res);\n";
+                    getter.Code += "\t}\n ";
+                }
+                else if (!isMandatory)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "!= null) {\n";
+                    getter.Code += "\t\t" + gsoapS2EnumConverterName + "(" + gsoapProxyName + "->soap, " + "(satic_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->*" + attributeName + ").c_str(), &res);\n";
+                    getter.Code += "\t}\n";
+                }
+                else
+                {
+                    getter.Code += "\t\t" + gsoapS2EnumConverterName + "(" + gsoapProxyName + "->soap, " + "(satic_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ").c_str(), &res);\n";
+                }
+
                 getter.Code += "\treturn res;\n";
             }
             else if (Tool.isMeasureType(enumType))
@@ -1223,7 +1336,23 @@ namespace fesapiGenerator
                 getter = fesapiClass.Methods.AddNew("get" + attributeName + "Uom", gsoapEnumName);
                 getter.Code = "if (" + gsoapProxyName + " != null)\n";
                 getter.Code += "{\n";
-                getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->uom;\n";
+
+                if (!isSingle)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->size() > index) {\n";
+                    getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "[item]->uom;\n";
+                    getter.Code += "\t}\n ";
+                }
+                else if (!isMandatory)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "!= null) {\n";
+                    getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->*" + attributeName + "->uom;\n";
+                    getter.Code += "\t}\n";
+                }
+                else
+                {
+                    getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->uom;\n";
+                }
             }
             else
             {
@@ -1231,12 +1360,38 @@ namespace fesapiGenerator
                 getter = fesapiClass.Methods.AddNew("get" + attributeName, gsoapEnumName);
                 getter.Code = "if (" + gsoapProxyName + " != null)\n";
                 getter.Code += "{\n";
-                getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ";\n";
+
+                if (!isSingle)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "->size() > index) {\n";
+                    getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "[index];\n";
+                    getter.Code += "\t}\n ";
+                }
+                else if (!isMandatory)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + "!= null) {\n";
+                    getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->*" + attributeName + ";\n";
+                    getter.Code += "\t}\n";
+                }
+                else
+                {
+                    getter.Code += "\t\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ";\n";
+                }
             }
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
             getter.Code += "}";
+
+            if (!isSingle)
+            {
+                getter.Code += "\nthrow out_of_range(\"The index is out of range\");";
+            }
+            else if (!isMandatory)
+            {
+                getter.Code += "\nthrow out_of_range(\"The " + attributeName + " atribute is not defined\");";
+            }
+
             getter.Stereotype = "const";
             if (!(getter.Update()))
             {
@@ -1244,6 +1399,18 @@ namespace fesapiGenerator
                 return null;
             }
             fesapiClass.Methods.Refresh();
+
+            if (!isSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
 
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
@@ -1256,7 +1423,7 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addResqmlEnumGetterAsString(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
+        private EA.Method addEnumGetterAsString(EA.Element fesapiClass, EA.Attribute energisticsAttribute, bool isSingle)
         {
             EA.Element enumType = repository.GetElementByID(energisticsAttribute.ClassifierID);
             string getterName = "get" + energisticsAttribute.Name;
@@ -1275,7 +1442,62 @@ namespace fesapiGenerator
             EA.Method getter = fesapiClass.Methods.AddNew(getterName + "AsString", "std::string");
             getter.Code = "if (" + gsoapProxyName + " != null)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn " + Tool.getGsoapEnum2SConverterName(repository, enumType) + "(" + gsoapProxyName + "->soap, " + getterName + "());\n";
+
+            if (!isSingle)
+            { 
+                getter.Code += "\treturn " + Tool.getGsoapEnum2SConverterName(repository, enumType) + "(" + gsoapProxyName + "->soap, " + getterName + "(index));\n";
+            }
+            else
+            {
+                getter.Code += "\treturn " + Tool.getGsoapEnum2SConverterName(repository, enumType) + "(" + gsoapProxyName + "->soap, " + getterName + "());\n";
+            }
+
+            getter.Code += "}\n";
+            getter.Code += "else {\n";
+            getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
+            getter.Code += "}";
+            getter.Stereotype = "const";
+            if (!(getter.Update()))
+            {
+                Tool.showMessageBox(repository, getter.GetLastError());
+                return null;
+            }
+            fesapiClass.Methods.Refresh();
+
+            if (!isSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
+
+            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            getter.TaggedValues.Refresh();
+
+            return getter;
+        }
+
+        private EA.Method addCountGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute)
+        {
+            string attributeName = energisticsAttribute.Name;
+            EA.Element energisticsClass = repository.GetElementByID(energisticsAttribute.ParentID);
+            string gsoapClassName = Tool.getGsoapName(repository, energisticsClass);
+            string gsoapProxyName = Tool.getGsoapProxyName(repository, energisticsClass);
+
+            EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName + "Count", "unsigned int");
+            getter.Code = "if (" + gsoapProxyName + " != null)\n";
+            getter.Code += "{\n";
+            getter.Code += "\treturn static_cast<" + gsoapClassName + "*>(" + gsoapProxyName + ")->" + attributeName + ".size();\n";
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
@@ -1299,16 +1521,34 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private void addResqmlGetter(EA.Element fesapiResqml2Class, EA.Attribute energisticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute)
+        private void addGetter(EA.Element fesapiResqml2Class, EA.Attribute energisticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute)
         {
-            if (!(energisticsResqml2_0_1Attribute.LowerBound.Equals("1")) || !(energisticsResqml2_0_1Attribute.UpperBound.Equals("1")) || !(energisticsResqml2_2Attribute.LowerBound.Equals("1")) || !(energisticsResqml2_2Attribute.UpperBound.Equals("1")))
-            {
-                Tool.log(repository, "Getter generation for resqml2::" + fesapiResqml2Class.Name + "." + energisticsResqml2_0_1Attribute.Name + "is not handle since it is not a mandatory attribute.");
-                return;
-            }
-
             // get the fesapiClass package name for expliciting log messages
             string packageName = repository.GetPackageByID(fesapiResqml2Class.PackageID).Name;
+
+            // checking wether the attribute is mandatory
+            bool energisticsResqml2_0_1AttributeIsMandatory = true;
+            if (energisticsResqml2_0_1Attribute.LowerBound.Equals("0"))
+            {
+                energisticsResqml2_0_1AttributeIsMandatory = false;
+            }
+            bool energisticsResqml2_2AttributeIsMandatory = true;
+            if (energisticsResqml2_2Attribute.LowerBound.Equals("0"))
+            {
+                energisticsResqml2_2AttributeIsMandatory = false;
+            }
+
+            // checking wether the attribute upper bound cardinality is 1
+            bool energisticsResqml2_0_1AttributeIsSingle = true;
+            if (!(energisticsResqml2_0_1Attribute.UpperBound.Equals("1")))
+            {
+                energisticsResqml2_0_1AttributeIsSingle = false;
+            }
+            bool energisticsResqml2_2AttributeIsSingle = true;
+            if (!(energisticsResqml2_2Attribute.UpperBound.Equals("1")))
+            {
+                energisticsResqml2_2AttributeIsSingle = false;
+            }
 
             string energisticsResqml2_0_1AttributeBasicType = Tool.getBasicType(repository, energisticsResqml2_0_1Attribute);
             string energisticsResqml2_2AttributeBasicType = Tool.getBasicType(repository, energisticsResqml2_2Attribute);
@@ -1318,7 +1558,9 @@ namespace fesapiGenerator
                 // if basic types are the same
                 if (energisticsResqml2_0_1AttributeBasicType.Equals(energisticsResqml2_2AttributeBasicType))
                 { 
-                    if (addResqmlBasicTypeGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute) == null)
+                    if (addBasicTypeGetter(fesapiResqml2Class, 
+                        energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsMandatory, energisticsResqml2_0_1AttributeIsSingle,
+                        energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsMandatory, energisticsResqml2_2AttributeIsSingle) == null)
                     {
                         Tool.log(repository, "Unable to properly add basic type getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                         return;
@@ -1335,17 +1577,23 @@ namespace fesapiGenerator
             // this can be detected if there is no possible convertion between them (gSOAP -> s2enumName error case).
             else if (Tool.isMeasureType(repository.GetElementByID(energisticsResqml2_0_1Attribute.ClassifierID)) && Tool.isMeasureType(repository.GetElementByID(energisticsResqml2_2Attribute.ClassifierID)))
             {
-                if (addResqmlMeasureGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute) == null)
+                if (addMeasureGetter(fesapiResqml2Class,
+                        energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsMandatory, energisticsResqml2_0_1AttributeIsSingle,
+                        energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsMandatory, energisticsResqml2_2AttributeIsSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add measure value getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                     return;
                 }
-                if (addResqmlEnumConversionGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute) == null)
+                if (addEnumConversionGetter(fesapiResqml2Class,
+                        energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsMandatory, energisticsResqml2_0_1AttributeIsSingle,
+                        energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsMandatory, energisticsResqml2_2AttributeIsSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add unit of measure getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                     return;
                 }
-                if (addResqmlEnumGetterAsString(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute) == null)
+                if (addEnumGetterAsString(fesapiResqml2Class, 
+                    energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsSingle,
+                    energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add string unit of measure getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                     return;
@@ -1358,12 +1606,16 @@ namespace fesapiGenerator
                 (Tool.isEnum(repository.GetElementByID(energisticsResqml2_0_1Attribute.ClassifierID)) && repository.GetElementByID(energisticsResqml2_2Attribute.ClassifierID).Name.EndsWith("Ext"))
                 ) // TODO: when Resqml 2.2 type ends with "Ext" it is not tested that prefix is the same than Resqml 2.0.1 type
             {
-                if (addResqmlEnumConversionGetter(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute) == null)
+                if (addEnumConversionGetter(fesapiResqml2Class,
+                        energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsMandatory, energisticsResqml2_0_1AttributeIsSingle,
+                        energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsMandatory, energisticsResqml2_2AttributeIsSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add enum value getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                     return;
                 }
-                if (addResqmlEnumGetterAsString(fesapiResqml2Class, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute) == null)
+                if (addEnumGetterAsString(fesapiResqml2Class,
+                    energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsSingle,
+                    energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add string enum value getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                     return;
@@ -1371,11 +1623,24 @@ namespace fesapiGenerator
             }
             else
             {
-                Tool.log(repository, "Unable to properly getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
+                Tool.log(repository, "Unable to properly add getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
+                return;
+            }
+
+            if (!energisticsResqml2_0_1AttributeIsSingle || !energisticsResqml2_2AttributeIsSingle)
+            {
+                if (addCountGetter(fesapiResqml2Class, 
+                    energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsSingle, 
+                    energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add count getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
+                }
             }
         }
 
-        private EA.Method addResqmlBasicTypeGetter(EA.Element fesapiClass, EA.Attribute energisticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute)
+        private EA.Method addBasicTypeGetter(EA.Element fesapiClass, 
+            EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsMandatory, bool energisticsResqml2_0_1AttributeIsSingle,
+            EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsMandatory, bool energisticsResqml2_2AttributeIsSingle)
         {
             string energisticsResqml2_2AttributeBasicType = Tool.getBasicType(repository, energisticsResqml2_2Attribute);
             string attributeType = energisticsResqml2_2AttributeBasicType;
@@ -1390,11 +1655,57 @@ namespace fesapiGenerator
             EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName, attributeType);
             getter.Code = "if (" + gsoapResqml2_0_1ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + ";\n";
+
+            if (!energisticsResqml2_0_1AttributeIsSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "[index];\n";
+                getter.Code += "\t}\n ";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                getter.Code += "\t}\n";
+            }
+            else if (!energisticsResqml2_0_1AttributeIsMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->*" + attributeName + ";\n";
+                getter.Code += "\t}\n";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + ";\n";
+            }
+
             getter.Code += "}\n";
             getter.Code += "else if (" + gsoapResqml2_2ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ";\n";
+
+            if (!energisticsResqml2_2AttributeIsSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "[index];\n";
+                getter.Code += "\t}\n ";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                getter.Code += "\t}\n";
+            }
+            else if (!energisticsResqml2_2AttributeIsMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->*" + attributeName + ";\n";
+                getter.Code += "\t}\n";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ";\n";
+            }
+
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
@@ -1406,6 +1717,24 @@ namespace fesapiGenerator
                 return null;
             }
             fesapiClass.Methods.Refresh();
+
+            if (!energisticsResqml2_0_1AttributeIsSingle || !energisticsResqml2_2AttributeIsSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+
+                if (energisticsResqml2_0_1AttributeIsSingle || energisticsResqml2_2AttributeIsSingle)
+                {
+                    parameter.Default = "0";
+                }
+                
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
 
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
@@ -1418,10 +1747,10 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addResqmlMeasureGetter(EA.Element fesapiClass, EA.Attribute energisticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute)
+        private EA.Method addMeasureGetter(EA.Element fesapiClass, 
+            EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsMandatory, bool energisticsResqml2_0_1AttributeIsSingle,
+            EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsMandatory, bool energisticsResqml2_2AttributeIsSingle)
         {
-            //EA.Element baseType2_0_1 = repository.GetElementByID(energisticsResqml2_0_1Attribute.ClassifierID);
-            //EA.Element baseType2_2 = repository.GetElementByID(energisticsResqml2_2Attribute.ClassifierID);
             string attributeName = energisticsResqml2_2Attribute.Name;
             EA.Element energisticsResqml2_0_1Class = repository.GetElementByID(energisticsResqml2_0_1Attribute.ParentID);
             string gsoapResqml2_0_1ClassName = Tool.getGsoapName(repository, energisticsResqml2_0_1Class);
@@ -1433,11 +1762,55 @@ namespace fesapiGenerator
             EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName, "double");
             getter.Code = "if (" + gsoapResqml2_0_1ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "->__item;\n";
+
+            if (!energisticsResqml2_0_1AttributeIsSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "[index]->__item;\n";
+                getter.Code += "\t}\n ";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                getter.Code += "\t}\n";
+            }
+            else if (!energisticsResqml2_0_1AttributeIsMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->*" + attributeName + "->__item;\n";
+                getter.Code += "\t}\n";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "->__item;\n";
+            }
             getter.Code += "}\n";
             getter.Code += "else if (" + gsoapResqml2_2ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "->__item;\n";
+
+            if (!energisticsResqml2_2AttributeIsSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "[index]->__item;\n";
+                getter.Code += "\t}\n ";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                getter.Code += "\t}\n";
+            }
+            else if (!energisticsResqml2_2AttributeIsMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->*" + attributeName + "->__item;\n";
+                getter.Code += "\t}\n";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "->__item;\n";
+            }
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
@@ -1450,6 +1823,24 @@ namespace fesapiGenerator
             }
             fesapiClass.Methods.Refresh();
 
+            if (!energisticsResqml2_0_1AttributeIsSingle || !energisticsResqml2_2AttributeIsSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+
+                if (energisticsResqml2_0_1AttributeIsSingle || energisticsResqml2_2AttributeIsSingle)
+                {
+                    parameter.Default = "0";
+                }
+
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
+
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
             {
@@ -1461,7 +1852,9 @@ namespace fesapiGenerator
             return getter;
         }   
                     
-        private EA.Method addResqmlEnumConversionGetter(EA.Element fesapiClass, EA.Attribute energisticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute)
+        private EA.Method addEnumConversionGetter(EA.Element fesapiClass,
+            EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsMandatory, bool energisticsResqml2_0_1AttributeIsSingle,
+            EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsMandatory, bool energisticsResqml2_2AttributeIsSingle)
         {
             EA.Element baseType2_0_1 = repository.GetElementByID(energisticsResqml2_0_1Attribute.ClassifierID);
             EA.Element baseType2_2 = repository.GetElementByID(energisticsResqml2_2Attribute.ClassifierID);
@@ -1486,13 +1879,36 @@ namespace fesapiGenerator
             EA.Element energisticsResqml2_2Class = repository.GetElementByID(energisticsResqml2_2Attribute.ParentID);
             string gsoapResqml2_2ClassName = Tool.getGsoapName(repository, energisticsResqml2_2Class);
             string gsoapResqml2_2ProxyName = Tool.getGsoapProxyName(repository, energisticsResqml2_2Class);
-            string gsoapResqml2_2S2EnumCOnverterName = Tool.getGsoapS2EnumConverterName(repository, baseType2_2);
+            string gsoapResqml2_2S2EnumConverterName = Tool.getGsoapS2EnumConverterName(repository, baseType2_2);
 
             EA.Method getter = fesapiClass.Methods.AddNew(getterName, gsoapResqml2_2EnumName);
             getter.Code = "if (" + gsoapResqml2_0_1ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
             getter.Code += "\t" + gsoapResqml2_2EnumName + " res;\n";
-            getter.Code += "\t" + gsoapResqml2_2S2EnumCOnverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + gsoapResqml2_0_1Enum2SConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "), &res);\n";
+
+            if (!energisticsResqml2_0_1AttributeIsSingle)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                getter.Code += "\t\t" + gsoapResqml2_2S2EnumConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + gsoapResqml2_0_1Enum2SConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "[index]), &res);\n";
+                getter.Code += "\t}\n ";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                getter.Code += "\t}\n";
+            }
+            else if (!energisticsResqml2_0_1AttributeIsMandatory)
+            {
+                getter.Code += "\tif (static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "!= null) {\n";
+                getter.Code += "\t\t" + gsoapResqml2_2S2EnumConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + gsoapResqml2_0_1Enum2SConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->*" + attributeName + "), &res);\n";
+                getter.Code += "\t}\n";
+                getter.Code += "\telse {\n";
+                getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                getter.Code += "\t}\n";
+            }
+            else
+            {
+                getter.Code += "\t" + gsoapResqml2_2S2EnumConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + gsoapResqml2_0_1Enum2SConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + "), &res);\n";
+            }
+
             getter.Code += "\treturn res;\n";
             getter.Code += "}\n";
             getter.Code += "else if (" + gsoapResqml2_2ProxyName + " != nullptr)\n";
@@ -1500,12 +1916,56 @@ namespace fesapiGenerator
             if (repository.GetElementByID(energisticsResqml2_2Attribute.ClassifierID).Name.EndsWith("Ext"))
             {
                 getter.Code += "\t" + gsoapResqml2_2EnumName + " res;\n";
-                getter.Code += "\t" + gsoapResqml2_2S2EnumCOnverterName + "(" + gsoapResqml2_2ProxyName + "->soap, (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ").c_str(), &res);\n";
+
+                if (!energisticsResqml2_2AttributeIsSingle)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                    getter.Code += "\t\t" + gsoapResqml2_2S2EnumConverterName + "(" + gsoapResqml2_2ProxyName + "->soap, (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "[index]).c_str(), &res);\n";
+                    getter.Code += "\t}\n ";
+                    getter.Code += "\telse {\n";
+                    getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                    getter.Code += "\t}\n";
+                }
+                else if (!energisticsResqml2_0_1AttributeIsMandatory)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "!= null) {\n";
+                    getter.Code += "\t\t" + gsoapResqml2_2S2EnumConverterName + "(" + gsoapResqml2_2ProxyName + "->soap, (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->*" + attributeName + ").c_str(), &res);\n";
+                    getter.Code += "\t}\n";
+                    getter.Code += "\telse {\n";
+                    getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                    getter.Code += "\t}\n";
+                }
+                else
+                {
+                    getter.Code += "\t" + gsoapResqml2_2S2EnumConverterName + "(" + gsoapResqml2_2ProxyName + "->soap, (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ").c_str(), &res);\n";
+                }
+
                 getter.Code += "\treturn res;\n";
             }
             else
             {
-                getter.Code += "\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ";\n";
+                if (!energisticsResqml2_2AttributeIsSingle)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "->size() > index) {\n";
+                    getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "[index];\n";
+                    getter.Code += "\t}\n ";
+                    getter.Code += "\telse {\n";
+                    getter.Code += "\t\tthrow out_of_range(\"The index is out of range\");\n";
+                    getter.Code += "\t}\n";
+                }
+                else if (!energisticsResqml2_0_1AttributeIsMandatory)
+                {
+                    getter.Code += "\tif (static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + "!= null) {\n";
+                    getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->*" + attributeName + ";\n";
+                    getter.Code += "\t}\n";
+                    getter.Code += "\telse {\n";
+                    getter.Code += "\t\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                    getter.Code += "\t}\n";
+                }
+                else
+                {
+                    getter.Code += "\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ";\n";
+                }
             }
             getter.Code += "}\n";
             getter.Code += "else {\n";
@@ -1519,6 +1979,24 @@ namespace fesapiGenerator
             }
             fesapiClass.Methods.Refresh();
 
+            if (!energisticsResqml2_0_1AttributeIsSingle || !energisticsResqml2_2AttributeIsSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+
+                if (energisticsResqml2_0_1AttributeIsSingle || energisticsResqml2_2AttributeIsSingle)
+                {
+                    parameter.Default = "0";
+                }
+
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
+
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
             {
@@ -1530,7 +2008,9 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addResqmlEnumGetterAsString(EA.Element fesapiClass, EA.Attribute energisticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute)
+        private EA.Method addEnumGetterAsString(EA.Element fesapiClass, 
+            EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsSingle,
+            EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsSingle)
         {
             EA.Element baseType2_0_1 = repository.GetElementByID(energisticsResqml2_0_1Attribute.ClassifierID);
             EA.Element baseType2_2 = repository.GetElementByID(energisticsResqml2_2Attribute.ClassifierID);
@@ -1551,14 +2031,32 @@ namespace fesapiGenerator
             string gsoapResqml2_0_1ProxyName = Tool.getGsoapProxyName(repository, energisticsResqml2_0_1Class);
             EA.Element energisticsResqml2_2Class = repository.GetElementByID(energisticsResqml2_2Attribute.ParentID);
             string gsoapResqml2_2ProxyName = Tool.getGsoapProxyName(repository, energisticsResqml2_2Class);
-            string gsoapResqml2_2Enum2SCOnverterName = Tool.getGsoapEnum2SConverterName(repository, baseType2_2);
+            string gsoapResqml2_2Enum2SConverterName = Tool.getGsoapEnum2SConverterName(repository, baseType2_2);
             getter.Code = "if (" + gsoapResqml2_0_1ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn " + gsoapResqml2_2Enum2SCOnverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + getterName + "());\n";
+
+            if (!energisticsResqml2_0_1AttributeIsSingle)
+            {
+                getter.Code += "\treturn " + gsoapResqml2_2Enum2SConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + getterName + "(index));\n";
+            }
+            else
+            {
+                getter.Code += "\treturn " + gsoapResqml2_2Enum2SConverterName + "(" + gsoapResqml2_0_1ProxyName + "->soap, " + getterName + "());\n";
+            }
+
             getter.Code += "}\n";
             getter.Code += "else if (" + gsoapResqml2_2ProxyName + " != nullptr)\n";
             getter.Code += "{\n";
-            getter.Code += "\treturn " + gsoapResqml2_2Enum2SCOnverterName + "(" + gsoapResqml2_2ProxyName + "->soap, " + getterName + "());\n";
+
+            if (!energisticsResqml2_2AttributeIsSingle)
+            {
+                getter.Code += "\treturn " + gsoapResqml2_2Enum2SConverterName + "(" + gsoapResqml2_2ProxyName + "->soap, " + getterName + "(index));\n";
+            }
+            else
+            {
+                getter.Code += "\treturn " + gsoapResqml2_2Enum2SConverterName + "(" + gsoapResqml2_2ProxyName + "->soap, " + getterName + "());\n";
+            }
+
             getter.Code += "}\n";
             getter.Code += "else {\n";
             getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
@@ -1568,6 +2066,85 @@ namespace fesapiGenerator
             {
                 Tool.showMessageBox(repository, getter.GetLastError());
                 return null;    
+            }
+            fesapiClass.Methods.Refresh();
+
+            if (!energisticsResqml2_0_1AttributeIsSingle || !energisticsResqml2_2AttributeIsSingle)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index", "unsigned int &");
+                parameter.IsConst = true;
+
+                if (energisticsResqml2_0_1AttributeIsSingle || energisticsResqml2_2AttributeIsSingle)
+                {
+                    parameter.Default = "0";
+                }
+
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
+
+            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            getter.TaggedValues.Refresh();
+
+            return getter;
+        }
+
+        private EA.Method addCountGetter(EA.Element fesapiClass, 
+            EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsSingle,
+            EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsSingle)
+        {
+            string attributeName = energisticsResqml2_2Attribute.Name;
+            EA.Element energisticsResqml2_0_1Class = repository.GetElementByID(energisticsResqml2_0_1Attribute.ParentID);
+            string gsoapResqml2_0_1ClassName = Tool.getGsoapName(repository, energisticsResqml2_0_1Class);
+            string gsoapResqml2_0_1ProxyName = Tool.getGsoapProxyName(repository, energisticsResqml2_0_1Class);
+            EA.Element energisticsResqml2_2Class = repository.GetElementByID(energisticsResqml2_2Attribute.ParentID);
+            string gsoapResqml2_2ClassName = Tool.getGsoapName(repository, energisticsResqml2_2Class);
+            string gsoapResqml2_2ProxyName = Tool.getGsoapProxyName(repository, energisticsResqml2_2Class);
+
+            EA.Method getter = fesapiClass.Methods.AddNew("get" + attributeName + "Count", "unsigned int");
+            getter.Code = "if (" + gsoapResqml2_0_1ProxyName + " != nullptr)\n";
+            getter.Code += "{\n";
+
+            if (!energisticsResqml2_0_1AttributeIsSingle)
+            {
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_0_1ClassName + "*>(" + gsoapResqml2_0_1ProxyName + ")->" + attributeName + ".size();\n";
+            }
+            else
+            {
+                getter.Code += "\treturn 1;\n";
+            }
+
+            getter.Code += "}\n";
+            getter.Code += "else if (" + gsoapResqml2_2ProxyName + " != nullptr)\n";
+            getter.Code += "{\n";
+
+            if (!energisticsResqml2_2AttributeIsSingle)
+            {
+                getter.Code += "\t\treturn static_cast<" + gsoapResqml2_2ClassName + "*>(" + gsoapResqml2_2ProxyName + ")->" + attributeName + ".size();\n";
+            }
+            else
+            {
+                getter.Code += "\treturn 1;\n";
+            }
+
+            getter.Code += "}\n";
+            getter.Code += "else {\n";
+            getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
+            getter.Code += "}";
+            getter.Stereotype = "const";
+            if (!(getter.Update()))
+            {
+                Tool.showMessageBox(repository, getter.GetLastError());
+                return null;
             }
             fesapiClass.Methods.Refresh();
 
@@ -1583,6 +2160,14 @@ namespace fesapiGenerator
         }
 
         #endregion
+
+        #region relations
+        #endregion
+
+        private void relationTest()
+        {
+
+        }
 
         #endregion
     }
