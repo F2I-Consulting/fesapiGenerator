@@ -633,6 +633,42 @@ namespace fesapiGenerator
             return getGsoapNameRec(repository, element, package);
         }
 
+        static private string getFesapiNamespaceRec(EA.Repository repository, EA.Element element, EA.Package package)
+        {
+            if (package.Name.Equals(Constants.common2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.commonModelName))
+            {
+                return Constants.fesapiResqml2_0_1PackageName;
+            }
+
+            if (package.Name.Equals(Constants.common2_2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.commonModelName))
+            {
+                return Constants.fesapiResqml2_2PackageName;
+            }
+
+            if (package.Name.Equals(Constants.resqml2_0_1PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.resqmlModelName))
+            {
+                return Constants.fesapiResqml2_0_1PackageName;
+            }
+
+            if (package.Name.Equals(Constants.resqml2_2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.resqmlModelName))
+            {
+                return Constants.fesapiResqml2_2PackageName;
+            }
+
+            // TODO: handle with exception
+            //if (package.ParentID == 0)
+            //    ...
+
+            return getFesapiNamespaceRec(repository, element, repository.GetPackageByID(package.ParentID));
+        }
+
+        static public string getFesapiNamespace(EA.Repository repository, EA.Element element)
+        {
+            EA.Package package = repository.GetPackageByID(element.PackageID);
+
+            return getFesapiNamespaceRec(repository, element, package);
+        }
+
         static private string getGsoapProxyNameRec(EA.Repository repository, EA.Element element, EA.Package package)
         {
             if (package.Name.Equals(Constants.common2PackageName) && repository.GetPackageByID(package.ParentID).Name.Equals(Constants.commonModelName))
@@ -669,6 +705,8 @@ namespace fesapiGenerator
             return getGsoapProxyNameRec(repository, element, package);
         }
 
+
+
         static public string getGsoapEnum2SConverterName(EA.Repository repository, EA.Element enumElement)
         {
             return getGsoapName(repository, enumElement).Replace("::", "::soap_") + "2s";
@@ -703,5 +741,13 @@ namespace fesapiGenerator
         {
             return (type.Type.Equals("enumeration") || type.Type.Equals("Enumeration") || type.Stereotype.Equals("Enumeration") || type.Stereotype.Equals("enumeration") || type.StereotypeEx.Equals("Enumeration") || type.StereotypeEx.Equals("enumeration"));
         }
+
+        public static bool areSameCardinality(string card1, string card2)
+        {
+            return ((card1 == card2) ||
+                (card1 == "1" || card1 == "1..1" || card1 == "") && (card2 == "1" || card2 == "1..1" || card2 == "") ||
+                (card1 == "*" || card1 == "0..*") && (card2 == "*" || card2 == "0..*"));
+        }
+
     }
 }

@@ -789,7 +789,7 @@ namespace fesapiGenerator
             fesapiModel.Packages.Refresh();
             repository.Models.Refresh();
 
-            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(repository, resqmlV2_0_1Package, resqmlV2_2Package, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
+            FesapiModelGenerator fesapiModelGenerator = new FesapiModelGenerator(repository, commonV2Package, commonV2_2Package, resqmlV2_0_1Package, resqmlV2_2Package, fesapiCommonPackage, fesapiResqml2Package, fesapiResqml2_0_1Package, fesapiResqml2_2Package);
             fesapiModelGenerator.generateFesapiModel();
 
             Tool.log(repository, "fesapi model generated (" + DateTime.Now.ToString() + ").");

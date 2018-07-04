@@ -34,6 +34,16 @@ namespace fesapiGenerator
         private EA.Repository repository;
 
         /// <summary>
+        /// Energistics common/v2.0 package
+        /// </summary>
+        private EA.Package energisticsCommon2_0Package;
+
+        /// <summary>
+        /// Energistics common/v2.2 package
+        /// </summary>
+        private EA.Package energisticsCommon2_2Package;
+
+        /// <summary>
         /// Energistics resqml/V2.0.1 package
         /// </summary>
         private EA.Package energisticsResqml2_0_1Package;
@@ -62,12 +72,12 @@ namespace fesapiGenerator
         /// Fesapi resqml2_2 package
         /// </summary>
         private EA.Package fesapiResqml2_2Package;
-        
+
         /// <summary>
         /// Fesapi EpcDocument class
         /// </summary>
         private EA.Element epcDocumentClass;
-        
+
         /// <summary>
         /// Fesapi AbstractObject class
         /// </summary>
@@ -82,7 +92,7 @@ namespace fesapiGenerator
         private Dictionary<EA.Element, EA.Element> fesapiResqml2_0_1toEnergisticsResqml2_0_1 = null;
         private Dictionary<EA.Element, EA.Element> fesapiResqml2_2toEnergisticsResqml2_2 = null;
 
-        
+
 
         #endregion
 
@@ -90,10 +100,12 @@ namespace fesapiGenerator
 
         public FesapiModelGenerator(
             EA.Repository repository,
-            EA.Package energisticsResqml2_0_1Package, EA.Package energisticsResqml2_2Package,
+            EA.Package energisticsCommon2_0Package, EA.Package energisticsCommon2_2Package, EA.Package energisticsResqml2_0_1Package, EA.Package energisticsResqml2_2Package,
             EA.Package fesapiCommonPackage, EA.Package fesapiResqml2Package, EA.Package fesapiResqml2_0_1Package, EA.Package fesapiResqml2_2Package)
         {
             this.repository = repository;
+            this.energisticsCommon2_0Package = energisticsCommon2_0Package;
+            this.energisticsCommon2_2Package = energisticsCommon2_2Package;
             this.energisticsResqml2_0_1Package = energisticsResqml2_0_1Package;
             this.energisticsResqml2_2Package = energisticsResqml2_2Package;
             this.fesapiCommonPackage = fesapiCommonPackage;
@@ -130,10 +142,12 @@ namespace fesapiGenerator
             // getting all Resqml 2.0.1 top level classes
             List<EA.Element> energisticsResqml2_0_1ClassList = new List<EA.Element>();
             Tool.fillElementList(energisticsResqml2_0_1Package, energisticsResqml2_0_1ClassList, "Class", true);
+            Tool.fillElementList(energisticsCommon2_0Package, energisticsResqml2_0_1ClassList, "Class", true);
 
             // getting all Resqml 2.2 top level classes
             List<EA.Element> energisticsResqml2_2ClassList = new List<EA.Element>();
             Tool.fillElementList(energisticsResqml2_2Package, energisticsResqml2_2ClassList, "Class", true);
+            Tool.fillElementList(energisticsCommon2_2Package, energisticsResqml2_2ClassList, "Class", true);
 
             // we look at all Resqml 2.0.1 classes
             foreach (EA.Element energisticsResqml2_0_1Class in energisticsResqml2_0_1ClassList)
@@ -150,9 +164,7 @@ namespace fesapiGenerator
                 // ***************************************************************************************************************************************************************
 
                 //exploreRelationSet(energisticsResqml2_0_1Class);
-                exploreRelationSetBis(energisticsResqml2_0_1Class);
-                
-                
+
                 // does it exists such a class (with the same name) in Resqml 2.2?
                 EA.Element energisticsResqml2_2Class = energisticsResqml2_2ClassList.Find(c => c.Name.Equals(energisticsClassName));
                 if (energisticsResqml2_2Class != null)
@@ -165,9 +177,11 @@ namespace fesapiGenerator
                         continue;
                     }
                     fesapiResqml2ClassList.Add(fesapiResqml2Class);
-                    fesapiResqml2ToEnergisticsResqml2_0_1.Add(fesapiResqml2Class, energisticsResqml2_0_1Class); 
+                    fesapiResqml2ToEnergisticsResqml2_0_1.Add(fesapiResqml2Class, energisticsResqml2_0_1Class);
                     fesapiResqml2ToEnergisticsResqml2_2.Add(fesapiResqml2Class, energisticsResqml2_2Class);
-                    
+
+                    exploreResqml2RelationSet(energisticsResqml2_0_1Class, energisticsResqml2_2Class);
+
                     // if it is not an abstract class, it must also be added to both fesapi/resqml2_0_1 and fesapi/resqml2_2 packages
                     if (Tool.isLeaf(energisticsResqml2_0_1Class))
                     {
@@ -179,7 +193,7 @@ namespace fesapiGenerator
                         }
                         fesapiResqml2_0_1ClassList.Add(fesapiResqml2_0_1Class);
                         fesapiResqml2_0_1toEnergisticsResqml2_0_1.Add(fesapiResqml2_0_1Class, energisticsResqml2_0_1Class);
-                        
+
 
                         EA.Element fesapiResqml2_2Class = addFesapiClass(energisticsClassName, fesapiResqml2_2Package);
                         if (fesapiResqml2_2Class == null)
@@ -208,7 +222,7 @@ namespace fesapiGenerator
             //// we look at remaining resqml 2.2 classes (classes whose are not common with resqml 2.0.1)
             //foreach (EA.Element energisticsResqml2_2Class in energisticsResqml2_2ClassList)
             //{
-            //    exploreRelationSet(energisticsResqml2_2Class);
+            //    //exploreRelationSet(energisticsResqml2_2Class);
 
             //    string energisticsClassName = energisticsResqml2_2Class.Name;
 
@@ -236,7 +250,6 @@ namespace fesapiGenerator
             //generateConstructorSet();
             //generateXmlTagSet();
             //generateGetterSet();
-            //relationTest();
 
             // make sure the model view is up to date in the Enterprise Architect GUI
             repository.RefreshModelView(0);
@@ -701,7 +714,7 @@ namespace fesapiGenerator
         {
             EA.Method constructor = fesapiClass.Methods.AddNew(fesapiClass.Name, "");
             constructor.Notes = "Default constructor\nSet the gsoap proxy to nullptr.";
-            constructor.Visibility =visibility;
+            constructor.Visibility = visibility;
             if (!(constructor.Update()))
             {
                 Tool.showMessageBox(repository, constructor.GetLastError());
@@ -742,7 +755,7 @@ namespace fesapiGenerator
                 return null;
             }
             destructor.TaggedValues.Refresh();
-            
+
             return destructor;
         }
 
@@ -946,7 +959,7 @@ namespace fesapiGenerator
         #region getter
 
         private void generateGetterSet()
-        {           
+        {
             // handling fesapi/resqml2 classes
             foreach (EA.Element fesapiResqml2Class in fesapiResqml2ClassList)
             {
@@ -1102,10 +1115,11 @@ namespace fesapiGenerator
                 if (addBasicTypeGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add basic type getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
-                    return;    
+                    return;
                 }
-            // else if the type of the attribute is a measure type
-            } else if (Tool.isMeasureType(repository.GetElementByID(energisticsAttribute.ClassifierID)))
+                // else if the type of the attribute is a measure type
+            }
+            else if (Tool.isMeasureType(repository.GetElementByID(energisticsAttribute.ClassifierID)))
             {
                 if (addMeasureGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
                 {
@@ -1120,7 +1134,7 @@ namespace fesapiGenerator
                 if (addEnumGetterAsString(fesapiClass, energisticsAttribute, isSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add string unit of measure getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
-                    return;    
+                    return;
                 }
             }
             // else if the type of the attribute is an enum type
@@ -1453,7 +1467,7 @@ namespace fesapiGenerator
             getter.Code += "{\n";
 
             if (!isSingle)
-            { 
+            {
                 getter.Code += "\treturn " + Tool.getGsoapEnum2SConverterName(repository, enumType) + "(" + gsoapProxyName + "->soap, " + getterName + "(index));\n";
             }
             else
@@ -1566,8 +1580,8 @@ namespace fesapiGenerator
             {
                 // if basic types are the same
                 if (energisticsResqml2_0_1AttributeBasicType.Equals(energisticsResqml2_2AttributeBasicType))
-                { 
-                    if (addBasicTypeGetter(fesapiResqml2Class, 
+                {
+                    if (addBasicTypeGetter(fesapiResqml2Class,
                         energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsMandatory, energisticsResqml2_0_1AttributeIsSingle,
                         energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsMandatory, energisticsResqml2_2AttributeIsSingle) == null)
                     {
@@ -1600,7 +1614,7 @@ namespace fesapiGenerator
                     Tool.log(repository, "Unable to properly add unit of measure getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
                     return;
                 }
-                if (addEnumGetterAsString(fesapiResqml2Class, 
+                if (addEnumGetterAsString(fesapiResqml2Class,
                     energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsSingle,
                     energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsSingle) == null)
                 {
@@ -1638,8 +1652,8 @@ namespace fesapiGenerator
 
             if (!energisticsResqml2_0_1AttributeIsSingle || !energisticsResqml2_2AttributeIsSingle)
             {
-                if (addCountGetter(fesapiResqml2Class, 
-                    energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsSingle, 
+                if (addCountGetter(fesapiResqml2Class,
+                    energisticsResqml2_0_1Attribute, energisticsResqml2_0_1AttributeIsSingle,
                     energisticsResqml2_2Attribute, energisticsResqml2_2AttributeIsSingle) == null)
                 {
                     Tool.log(repository, "Unable to properly add count getter for the " + energisticsResqml2_0_1Attribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiResqml2Class.Name + "!");
@@ -1647,7 +1661,7 @@ namespace fesapiGenerator
             }
         }
 
-        private EA.Method addBasicTypeGetter(EA.Element fesapiClass, 
+        private EA.Method addBasicTypeGetter(EA.Element fesapiClass,
             EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsMandatory, bool energisticsResqml2_0_1AttributeIsSingle,
             EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsMandatory, bool energisticsResqml2_2AttributeIsSingle)
         {
@@ -1736,7 +1750,7 @@ namespace fesapiGenerator
                 {
                     parameter.Default = "0";
                 }
-                
+
                 if (!(parameter.Update()))
                 {
                     Tool.showMessageBox(repository, parameter.GetLastError());
@@ -1756,7 +1770,7 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addMeasureGetter(EA.Element fesapiClass, 
+        private EA.Method addMeasureGetter(EA.Element fesapiClass,
             EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsMandatory, bool energisticsResqml2_0_1AttributeIsSingle,
             EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsMandatory, bool energisticsResqml2_2AttributeIsSingle)
         {
@@ -1859,8 +1873,8 @@ namespace fesapiGenerator
             getter.TaggedValues.Refresh();
 
             return getter;
-        }   
-                    
+        }
+
         private EA.Method addEnumConversionGetter(EA.Element fesapiClass,
             EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsMandatory, bool energisticsResqml2_0_1AttributeIsSingle,
             EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsMandatory, bool energisticsResqml2_2AttributeIsSingle)
@@ -2017,7 +2031,7 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addEnumGetterAsString(EA.Element fesapiClass, 
+        private EA.Method addEnumGetterAsString(EA.Element fesapiClass,
             EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsSingle,
             EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsSingle)
         {
@@ -2074,7 +2088,7 @@ namespace fesapiGenerator
             if (!(getter.Update()))
             {
                 Tool.showMessageBox(repository, getter.GetLastError());
-                return null;    
+                return null;
             }
             fesapiClass.Methods.Refresh();
 
@@ -2107,7 +2121,7 @@ namespace fesapiGenerator
             return getter;
         }
 
-        private EA.Method addCountGetter(EA.Element fesapiClass, 
+        private EA.Method addCountGetter(EA.Element fesapiClass,
             EA.Attribute energisticsResqml2_0_1Attribute, bool energisticsResqml2_0_1AttributeIsSingle,
             EA.Attribute energisticsResqml2_2Attribute, bool energisticsResqml2_2AttributeIsSingle)
         {
@@ -2168,30 +2182,388 @@ namespace fesapiGenerator
             return getter;
         }
 
+
         #endregion
 
         #region relations
-        #endregion
 
-        private void exploreRelationSetBis(EA.Element energisticsClass)
+        private void exploreResqml2RelationSet(EA.Element energisticsResqml2_0_1Class, EA.Element energisticsResqml2_2Class)
+        {
+            Tool.log(repository, "========================");
+            Tool.log(repository, "begin exploreResqml2RelationSet...");
+
+            Tool.log(repository, "class: " + energisticsResqml2_0_1Class.Name);
+            exploreResqml2RelationSetRec(energisticsResqml2_0_1Class, energisticsResqml2_2Class, "", 0, "gsoapProxy");
+
+            Tool.log(repository, "... end exploreResqml2RelationSet");
+            Tool.log(repository, "========================");
+        }
+
+        // il faudra peut-être 2 path ici (je me suis posé la question quand on fait le cast, et qu'on met aussi le proxy gsoap, le code est pas le même des deux côté
+        private void exploreResqml2RelationSetRec(EA.Element energisticsResqml2_0_1Class, EA.Element energisticsResqml2_2Class, string markedGeneralizationSet, uint index, string path)
+        {
+            if (path != "gsoapProxy")
+            {
+                if ((Tool.isTopLevelClass(energisticsResqml2_0_1Class) || energisticsResqml2_0_1Class.Name == "AbstractResqmlDataObject") && (Tool.isTopLevelClass(energisticsResqml2_0_1Class) || energisticsResqml2_0_1Class.Name == "AbstractObject"))
+                {
+                    Tool.log(repository, "TopLevelObject relation (resqml2): " + path);
+                    return;
+                }
+                else if ((Tool.isTopLevelClass(energisticsResqml2_0_1Class) || energisticsResqml2_0_1Class.Name == "AbstractResqmlDataObject") || (Tool.isTopLevelClass(energisticsResqml2_0_1Class) || energisticsResqml2_0_1Class.Name == "AbstractObject"))
+                {
+                    exploreRelationSetRec(energisticsResqml2_0_1Class, markedGeneralizationSet, index, path);
+                    exploreRelationSetRec(energisticsResqml2_2Class, markedGeneralizationSet, index, path);
+                }
+            }
+
+            // on regarde tous les attributs côté Resqml 2.0.1
+            foreach (EA.Attribute energisticsResqml2_0_1Attribute in energisticsResqml2_0_1Class.Attributes)
+            {
+                EA.Attribute energisticsResqml2_2Attribute = null;
+                foreach (EA.Attribute currentEnergisticsResqml2_2Attribute in energisticsResqml2_2Class.Attributes)
+                {
+                    // est-ce que je dois nécessairement vérifier que les cardinalité sont les mêmes, 
+                    // dans la méthode précédente de génération des getters je m'en sortais sans (je pouvais avoir des 
+                    // cardinalité assymétrique)
+                    if (energisticsResqml2_0_1Attribute.Name == currentEnergisticsResqml2_2Attribute.Name &&
+                        energisticsResqml2_0_1Attribute.UpperBound == currentEnergisticsResqml2_2Attribute.UpperBound &&
+                        energisticsResqml2_0_1Attribute.LowerBound == currentEnergisticsResqml2_2Attribute.LowerBound)
+                    {
+                        energisticsResqml2_2Attribute = currentEnergisticsResqml2_2Attribute;
+                        break;
+                    }
+                }
+
+                // je ne prends pas en compte les types pour le moment
+                // je construit un chemin resqml2 vers l'attribut uniquement si les cardinalités sont les mêmes
+                // évaluation paresseuse
+                string fesapiNamespace;
+                if (energisticsResqml2_2Attribute != null)
+                {
+                    fesapiNamespace = "resqml2";
+                }
+                else
+                {
+                    fesapiNamespace = "resqml2_0_1";
+                }
+
+                // si la multiplicité est supérieur à 1
+                if (!(energisticsResqml2_0_1Attribute.UpperBound == "1"))
+                {
+                    Tool.log(repository, "Attribute relation (" + fesapiNamespace + "): " + path + "->" + energisticsResqml2_0_1Attribute.Name + "[index" + index + "]");
+                }
+                // sinon si l'attribut est optionnel
+                else if (energisticsResqml2_0_1Attribute.LowerBound == "0")
+                {
+                    Tool.log(repository, "Attribute relation (" + fesapiNamespace + "): " + path + "->(*" + energisticsResqml2_0_1Attribute.Name + ")");
+                }
+                // sinon s'il est unique et mandatory
+                else
+                {
+                    Tool.log(repository, "Attribute relation (" + fesapiNamespace + "): " + path + "->" + energisticsResqml2_0_1Attribute.Name);
+                }
+            }
+
+            // on explore les attributs côté Resqml 2.2 (pour chopper ceux qui ne sont pas communs)
+            foreach (EA.Attribute energisticsResqml2_2Attribute in energisticsResqml2_2Class.Attributes)
+            {
+                EA.Attribute energisticsResqml2_0_1Attribute = null;
+                foreach (EA.Attribute currentEnergisticsResqml2_0_1Attribute in energisticsResqml2_0_1Class.Attributes)
+                {
+                    if (energisticsResqml2_2Attribute.Name == currentEnergisticsResqml2_0_1Attribute.Name &&
+                        energisticsResqml2_2Attribute.UpperBound == currentEnergisticsResqml2_0_1Attribute.UpperBound &&
+                        energisticsResqml2_2Attribute.LowerBound == currentEnergisticsResqml2_0_1Attribute.LowerBound)
+                    {
+                        energisticsResqml2_0_1Attribute = currentEnergisticsResqml2_0_1Attribute;
+                        break;
+                    }
+                }
+
+                if (energisticsResqml2_0_1Attribute == null)
+                {
+                    // si la multiplicité est supérieur à 1
+                    if (!(energisticsResqml2_2Attribute.UpperBound == "1"))
+                    {
+                        Tool.log(repository, "Attribute relation (resqml2_2): " + path + "->" + energisticsResqml2_2Attribute.Name + "[index" + index + "]");
+                    }
+                    // sinon si l'attribut est optionnel
+                    else if (energisticsResqml2_2Attribute.LowerBound == "0")
+                    {
+                        Tool.log(repository, "Attribute relation (resqml2_2): " + path + "->(*" + energisticsResqml2_2Attribute.Name + ")");
+                    }
+                    // sinon s'il est unique et mandatory
+                    else
+                    {
+                        Tool.log(repository, "Attribute relation (resqml2_2): " + path + "->" + energisticsResqml2_2Attribute.Name);
+                    }
+                }
+            }
+
+            // on regarde tous les connecteurs côté Resqml 2.0.1
+            foreach (EA.Connector energisticsResqml2_0_1Connector in energisticsResqml2_0_1Class.Connectors)
+            {
+                // on traite d'abord le cas des connecteurs hors generalisation
+                if (energisticsResqml2_0_1Connector.Type != "Generalization" && energisticsResqml2_0_1Connector.ClientID == energisticsResqml2_0_1Class.ElementID)
+                {
+                    //Tool.log(repository, "DEBUG: " + energisticsResqml2_0_1Class.Name + "-" + energisticsResqml2_0_1Connector.SupplierEnd.Role + "->" + repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID).Name);
+
+                    EA.Connector energisticsResqml2_2Connector = null;
+                    foreach (EA.Connector currentEnergisticsResqml2_2Connector in energisticsResqml2_2Class.Connectors)
+                    {
+                        if (currentEnergisticsResqml2_2Connector.Type != "Generalization" &&
+                            currentEnergisticsResqml2_2Connector.ClientID == energisticsResqml2_2Class.ElementID &&
+                            currentEnergisticsResqml2_2Connector.SupplierEnd.Role == energisticsResqml2_0_1Connector.SupplierEnd.Role &&
+                            Tool.areSameCardinality(currentEnergisticsResqml2_2Connector.SupplierEnd.Cardinality, energisticsResqml2_0_1Connector.SupplierEnd.Cardinality))
+                        {
+                            energisticsResqml2_2Connector = currentEnergisticsResqml2_2Connector;
+                            break;
+                        }
+                    }
+
+                    if (energisticsResqml2_2Connector != null)
+                    {
+                        if (energisticsResqml2_0_1Connector.SupplierEnd.Cardinality == "*" || energisticsResqml2_0_1Connector.SupplierEnd.Cardinality == "0..*" || energisticsResqml2_0_1Connector.SupplierEnd.Cardinality == "1..*")
+                        {
+                            exploreResqml2RelationSetRec(
+                                repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID),
+                                repository.GetElementByID(energisticsResqml2_2Connector.SupplierID),
+                                markedGeneralizationSet,
+                                index + 1,
+                                path + "->" + energisticsResqml2_0_1Connector.SupplierEnd.Role + "[index" + index + "]");
+                        }
+                        else
+                        {
+                            exploreResqml2RelationSetRec(
+                                repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID), 
+                                repository.GetElementByID(energisticsResqml2_2Connector.SupplierID), 
+                                markedGeneralizationSet, 
+                                index, 
+                                path + "->" + energisticsResqml2_0_1Connector.SupplierEnd.Role);
+                        }
+                    }
+                    else
+                    {
+                        if (energisticsResqml2_0_1Connector.SupplierEnd.Cardinality == "*" || energisticsResqml2_0_1Connector.SupplierEnd.Cardinality == "0..*" || energisticsResqml2_0_1Connector.SupplierEnd.Cardinality == "1..*")
+                        {
+                            exploreRelationSetRec(
+                                repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID), 
+                                markedGeneralizationSet, 
+                                index + 1, 
+                                path + "->" + energisticsResqml2_0_1Connector.SupplierEnd.Role + "[index" + index + "]");
+                        }
+                        else
+                        {
+                            exploreRelationSetRec(
+                                repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID), 
+                                markedGeneralizationSet, 
+                                index, 
+                                path + "->" + energisticsResqml2_0_1Connector.SupplierEnd.Role);
+                        }
+                    }
+                }
+                // on traite ensuite les relations de type generalisation
+                else if (energisticsResqml2_0_1Connector.Type == "Generalization")
+                {
+                    //Tool.log(repository, "DEBUG: " + repository.GetElementByID(energisticsResqml2_0_1Connector.ClientID).Name + "->" + repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID).Name);
+
+                    EA.Connector energisticsResqml2_2Connector = null;
+                    foreach (EA.Connector currentEnergisticsResqml2_2Connector in energisticsResqml2_2Class.Connectors)
+                    {
+                        if (currentEnergisticsResqml2_2Connector.Type == "Generalization" &&
+                            (repository.GetElementByID(currentEnergisticsResqml2_2Connector.SupplierID).Name == repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID).Name || (repository.GetElementByID(currentEnergisticsResqml2_2Connector.SupplierID).Name == "AbstractObject" && repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID).Name == "AbstractResqmlDataObject")) &&
+                            repository.GetElementByID(currentEnergisticsResqml2_2Connector.ClientID).Name == repository.GetElementByID(energisticsResqml2_0_1Connector.ClientID).Name)
+                        {
+                            energisticsResqml2_2Connector = currentEnergisticsResqml2_2Connector;
+                            break;
+                        }
+                    }
+
+                    if (energisticsResqml2_2Connector != null && Tool.isTopLevelClass(energisticsResqml2_0_1Class) && Tool.isTopLevelClass(energisticsResqml2_2Class))
+                    {
+                        continue;
+                    }
+                    else if (energisticsResqml2_2Connector != null && !Tool.isTopLevelClass(energisticsResqml2_0_1Class) && !Tool.isTopLevelClass(energisticsResqml2_2Class))
+                    {
+                        // par construction, si ce n'est pas marké côté Resqml 2.0.1, ce n'est pas non pluc marqué côté Resqml 2.2
+                        // Attention toutefois à bien marquer les 2 dans le if dans le cas ou on appelerai récursivement la version non Resqml2
+                        if (!markedGeneralizationSet.Contains(energisticsResqml2_0_1Connector.ConnectorID.ToString()))
+                        {
+                            if (energisticsResqml2_0_1Connector.ClientID == energisticsResqml2_0_1Class.ElementID)
+                            {
+                                exploreResqml2RelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID),
+                                    repository.GetElementByID(energisticsResqml2_2Connector.SupplierID),
+                                    markedGeneralizationSet + (energisticsResqml2_0_1Connector.ConnectorID) + "." + (energisticsResqml2_2Connector.ConnectorID) + ".",
+                                    index,
+                                    path);
+                            }
+                            else
+                            {
+                                // ici il faut remplacer par le type gsoap
+                                exploreResqml2RelationSetRec(
+                                   repository.GetElementByID(energisticsResqml2_0_1Connector.ClientID),
+                                   repository.GetElementByID(energisticsResqml2_2Connector.ClientID),
+                                   markedGeneralizationSet + (energisticsResqml2_0_1Connector.ConnectorID) + "." + (energisticsResqml2_2Connector.ConnectorID) + ".",
+                                   index,
+                                   "static_cast<" + repository.GetElementByID(energisticsResqml2_0_1Connector.ClientID).Name + "*>(" + path + ")");
+                            }
+                        }
+                    } 
+                    else if (energisticsResqml2_2Connector != null && Tool.isTopLevelClass(energisticsResqml2_0_1Class))
+                    {
+                        // par construction, si ce n'est pas marké côté Resqml 2.0.1, ce n'est pas non pluc marqué côté Resqml 2.2
+                        // Attention toutefois à bien marquer les 2 dans le if dans le cas ou on appelerai récursivement la version non Resqml2
+                        if (!markedGeneralizationSet.Contains(energisticsResqml2_2Connector.ConnectorID.ToString()))
+                        {
+                            if (energisticsResqml2_2Connector.ClientID == energisticsResqml2_2Class.ElementID)
+                            {
+                                exploreRelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_2Connector.SupplierID),
+                                    markedGeneralizationSet + (energisticsResqml2_2Connector.ConnectorID) + ".",
+                                    index,
+                                    path);
+                            }
+                            else
+                            {
+                                // ici il faut remplacer par le type gsoap
+                                exploreRelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_2Connector.ClientID),
+                                    markedGeneralizationSet + (energisticsResqml2_2Connector.ConnectorID) + ".",
+                                    index,
+                                    "static_cast<" + repository.GetElementByID(energisticsResqml2_2Connector.ClientID).Name + "*>(" + path + ")");
+                            }
+                        }
+                    }
+                    else if (!Tool.isTopLevelClass(energisticsResqml2_0_1Class))
+                    {
+                        // par construction, si ce n'est pas marké côté Resqml 2.0.1, ce n'est pas non pluc marqué côté Resqml 2.2
+                        // Attention toutefois à bien marquer les 2 dans le if dans le cas ou on appelerai récursivement la version non Resqml2
+                        if (!markedGeneralizationSet.Contains(energisticsResqml2_0_1Connector.ConnectorID.ToString()))
+                        {
+                            if (energisticsResqml2_0_1Connector.ClientID == energisticsResqml2_0_1Class.ElementID)
+                            {
+                                exploreRelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_0_1Connector.SupplierID),
+                                    markedGeneralizationSet + (energisticsResqml2_0_1Connector.ConnectorID) + ".",
+                                    index,
+                                    path);
+                            }
+                            else
+                            {
+                                // ici il faut remplacer par le type gsoap
+                                exploreRelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_0_1Connector.ClientID),
+                                    markedGeneralizationSet + (energisticsResqml2_0_1Connector.ConnectorID) + ".",
+                                    index,
+                                    "static_cast<" + repository.GetElementByID(energisticsResqml2_0_1Connector.ClientID).Name + "*>(" + path + ")");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // on regarde ensuite les relations côté Resqml 2.2
+            foreach (EA.Connector energisticsResqml2_2Connector in energisticsResqml2_2Class.Connectors)
+            {
+                // on traite d'abord le cas des connecteurs hors generalisation
+                if (energisticsResqml2_2Connector.Type != "Generalization" && energisticsResqml2_2Connector.ClientID == energisticsResqml2_2Class.ElementID)
+                {
+                    //Tool.log(repository, "DEBUG: " + energisticsResqml2_0_1Class.Name + "-" + energisticsResqml2_2Connector.SupplierEnd.Role + "->" + repository.GetElementByID(energisticsResqml2_2Connector.SupplierID).Name);
+
+                    EA.Connector energisticsResqml2_0_1Connector = null;
+                    foreach (EA.Connector currentEnergisticsResqml2_0_1Connector in energisticsResqml2_0_1Class.Connectors)
+                    {
+                        if (currentEnergisticsResqml2_0_1Connector.Type != "Generalization" &&
+                            currentEnergisticsResqml2_0_1Connector.ClientID == energisticsResqml2_0_1Class.ElementID &&
+                            currentEnergisticsResqml2_0_1Connector.SupplierEnd.Role == energisticsResqml2_2Connector.SupplierEnd.Role &&
+                            Tool.areSameCardinality(currentEnergisticsResqml2_0_1Connector.SupplierEnd.Cardinality, energisticsResqml2_2Connector.SupplierEnd.Cardinality))
+                        {
+                            energisticsResqml2_0_1Connector = currentEnergisticsResqml2_0_1Connector;
+                            break;
+                        }
+                    }
+
+                    if (energisticsResqml2_0_1Connector == null)
+                    {
+                        if (energisticsResqml2_2Connector.SupplierEnd.Cardinality == "*" || energisticsResqml2_2Connector.SupplierEnd.Cardinality == "0..*" || energisticsResqml2_2Connector.SupplierEnd.Cardinality == "1..*")
+                        {
+                            exploreRelationSetRec(
+                                repository.GetElementByID(energisticsResqml2_2Connector.SupplierID),
+                                markedGeneralizationSet,
+                                index + 1,
+                                path + "->" + energisticsResqml2_2Connector.SupplierEnd.Role + "[index" + index + "]");
+                        }
+                        else
+                        {
+                            exploreRelationSetRec(
+                                repository.GetElementByID(energisticsResqml2_2Connector.SupplierID),
+                                markedGeneralizationSet,
+                                index,
+                                path + "->" + energisticsResqml2_2Connector.SupplierEnd.Role);
+                        }
+                    }
+                }
+                else if (energisticsResqml2_2Connector.Type == "Generalization")
+                {
+                    //Tool.log(repository, "DEBUG: " + repository.GetElementByID(energisticsResqml2_2Connector.ClientID).Name + "->" + repository.GetElementByID(energisticsResqml2_2Connector.SupplierID).Name);
+
+                    EA.Connector energisticsResqml2_0_1Connector = null;
+                    foreach (EA.Connector currentEnergisticsResqml2_0_1Connector in energisticsResqml2_0_1Class.Connectors)
+                    {
+                        if (currentEnergisticsResqml2_0_1Connector.Type == "Generalization" &&
+                            (repository.GetElementByID(currentEnergisticsResqml2_0_1Connector.SupplierID).Name == repository.GetElementByID(energisticsResqml2_2Connector.SupplierID).Name || (repository.GetElementByID(currentEnergisticsResqml2_0_1Connector.SupplierID).Name == "AbstractObject" && repository.GetElementByID(energisticsResqml2_2Connector.SupplierID).Name == "AbstractResqmlDataObject")) &&
+                            repository.GetElementByID(currentEnergisticsResqml2_0_1Connector.ClientID).Name == repository.GetElementByID(energisticsResqml2_2Connector.ClientID).Name)
+                        {
+                            energisticsResqml2_0_1Connector = currentEnergisticsResqml2_0_1Connector;
+                            break;
+                        }
+                    }
+
+                    if (energisticsResqml2_0_1Connector == null && !Tool.isTopLevelClass(energisticsResqml2_2Class))
+                    {
+                        if (!markedGeneralizationSet.Contains(energisticsResqml2_2Connector.ConnectorID.ToString()))
+                        {
+                            if (energisticsResqml2_2Connector.ClientID == energisticsResqml2_2Class.ElementID)
+                            {
+                                exploreRelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_2Connector.SupplierID),
+                                    markedGeneralizationSet + (energisticsResqml2_2Connector.ConnectorID) + ".",
+                                    index,
+                                    path);
+                            }
+                            else
+                            {
+                                // ici il faut remplacer par le type gsoap
+                                exploreRelationSetRec(
+                                    repository.GetElementByID(energisticsResqml2_2Connector.ClientID),
+                                    markedGeneralizationSet + (energisticsResqml2_2Connector.ConnectorID) + ".",
+                                    index,
+                                    "static_cast<" + repository.GetElementByID(energisticsResqml2_2Connector.ClientID).Name + "*>(" + path + ")");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void exploreRelationSet(EA.Element energisticsClass)
         {
             Tool.log(repository, "========================");
             Tool.log(repository, "begin exploreRelationSetBis...");
 
             Tool.log(repository, "class: " + energisticsClass.Name);
-            exploreRelationSetBisRec(energisticsClass, "", "gsoapProxy");
+            exploreRelationSetRec(energisticsClass, "", 0, "gsoapProxy");
 
             Tool.log(repository, "... end exploreRelationSetBis");
             Tool.log(repository, "========================");
         }
 
-        // Attention aux index des vector qui doivent changer de nom quand un s'enfonce dans un chemin
-        private void exploreRelationSetBisRec(EA.Element energisticsClass, string markedGeneralizationSet, string path)
+        private void exploreRelationSetRec(EA.Element energisticsClass, string markedGeneralizationSet, uint index, string path)
         {
             // je le chemin me mène à un top level je m'arrête
-            if((Tool.isTopLevelClass(energisticsClass) || energisticsClass.Name.Equals("AbstractResqmlDataObject") || energisticsClass.Name.Equals("AbstractObject")) && path != "gsoapProxy")
+            if ((Tool.isTopLevelClass(energisticsClass) || energisticsClass.Name.Equals("AbstractResqmlDataObject") || energisticsClass.Name.Equals("AbstractObject")) && path != "gsoapProxy")
             {
-                Tool.log(repository, "TopLevelObject relation: " + path);
+                Tool.log(repository, "TopLevelObject relation (" + Tool.getFesapiNamespace(repository, energisticsClass) + "): " + path);
                 return;
             }
 
@@ -2201,17 +2573,17 @@ namespace fesapiGenerator
                 // si la multiplicité est supérieur à 1
                 if (!(attribute.UpperBound == "1"))
                 {
-                    Tool.log(repository, "Attribute relation: " + path + "->" + attribute.Name + "[]");
+                    Tool.log(repository, "Attribute relation (" + Tool.getFesapiNamespace(repository, energisticsClass) + "): " + path + "->" + attribute.Name + "[index" + index + "]");
                 }
                 // sinon si l'attribut est optionnel
                 else if (attribute.LowerBound == "0")
                 {
-                    Tool.log(repository, "Attribute relation: " + path + "->(*" + attribute.Name + ")");
+                    Tool.log(repository, "Attribute relation (" + Tool.getFesapiNamespace(repository, energisticsClass) + "): " + path + "->(*" + attribute.Name + ")");
                 }
                 // sinon s'il est unique et mandatory
                 else
                 {
-                    Tool.log(repository, "Attribute relation: " + path + "->" + attribute.Name);
+                    Tool.log(repository, "Attribute relation (" + Tool.getFesapiNamespace(repository, energisticsClass) + "): " + path + "->" + attribute.Name);
                 }
             }
 
@@ -2219,15 +2591,13 @@ namespace fesapiGenerator
             {
                 if (connector.Type != "Generalization" && connector.ClientID == energisticsClass.ElementID)
                 {
-                    Tool.log(repository, "DEBUG: " + connector.SupplierEnd.Cardinality);
-
                     if (connector.SupplierEnd.Cardinality == "*" || connector.SupplierEnd.Cardinality == "0..*" || connector.SupplierEnd.Cardinality == "1..*")
                     {
-                        exploreRelationSetBisRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationSet, path + "->" + connector.SupplierEnd.Role + "[]");
+                        exploreRelationSetRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationSet, index + 1, path + "->" + connector.SupplierEnd.Role + "[index" + index + "]");
                     }
                     else
                     {
-                        exploreRelationSetBisRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationSet, path + "->" + connector.SupplierEnd.Role);
+                        exploreRelationSetRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationSet, index, path + "->" + connector.SupplierEnd.Role);
                     }
                 }
                 else if (connector.Type == "Generalization")
@@ -2239,73 +2609,21 @@ namespace fesapiGenerator
 
                     if (!markedGeneralizationSet.Contains(connector.ConnectorID.ToString()))
                     {
-                        markedGeneralizationSet += (connector.ConnectorID) + ".";
-
                         if (connector.ClientID == energisticsClass.ElementID)
                         {
-                            exploreRelationSetBisRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationSet,  path);
+                            exploreRelationSetRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationSet + (connector.ConnectorID) + ".", index, path);
                         }
                         else
                         {
                             // ici il faut remplacer par le type gsoap
-                            exploreRelationSetBisRec(repository.GetElementByID(connector.ClientID), markedGeneralizationSet, "static_cast<" + repository.GetElementByID(connector.ClientID).Name + "*>(" + path + ")");
+                            exploreRelationSetRec(repository.GetElementByID(connector.ClientID), markedGeneralizationSet + (connector.ConnectorID) + ".", index, "static_cast<" + repository.GetElementByID(connector.ClientID).Name + "*>(" + path + ")");
                         }
                     }
                 }
             }
         }
 
-        private void exploreRelationSet(EA.Element energisticsClass)
-        {
-            Tool.log(repository, "========================");
-            Tool.log(repository, "begin exploreRelationSet...");
-
-            Tool.log(repository, "class: " + energisticsClass.Name);
-            exploreRelationSetRec(energisticsClass, new List<int>(), "");
-
-            Tool.log(repository, "... end exploreRelationSet");
-            Tool.log(repository, "========================");
-        }
-
-        private void exploreRelationSetRec(EA.Element energisticsClass, List<int> markedGeneralizationConnectorSet, string relationExtendedName)
-        {
-            //Tool.log(repository, "call: " + energisticsClass.Name + ", " + relationExtendedName);
-
-            if ((Tool.isTopLevelClass(energisticsClass) || energisticsClass.Name.Equals("AbstractResqmlDataObject") || energisticsClass.Name.Equals("AbstractObject")) && relationExtendedName != "")
-            {
-                Tool.log(repository, "TopLevelObject relation: " + relationExtendedName);
-                return;
-            }
-
-            foreach (EA.Connector connector in energisticsClass.Connectors)
-            {
-                if (connector.Type == "Generalization")
-                {
-                    if(Tool.isTopLevelClass(energisticsClass))
-                    {
-                        continue;
-                    }
-                    
-                    //if (!markedGeneralizationConnectorSet.Contains(connector.ConnectorID))
-                    //{
-                    //    markedGeneralizationConnectorSet.Add(connector.ConnectorID);
-
-                        if (connector.ClientID == energisticsClass.ElementID)
-                        {
-                            exploreRelationSetRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationConnectorSet, relationExtendedName + "Genparent");
-                        }
-                        else
-                        {
-                            exploreRelationSetRec(repository.GetElementByID(connector.ClientID), markedGeneralizationConnectorSet, relationExtendedName + "Genchild");
-                        }
-                    //}
-                }
-                else if (connector.ClientID == energisticsClass.ElementID)
-                {
-                    exploreRelationSetRec(repository.GetElementByID(connector.SupplierID), markedGeneralizationConnectorSet, relationExtendedName + connector.SupplierEnd.Role);
-                }
-            }
-        }
+        #endregion
 
         #endregion
     }
