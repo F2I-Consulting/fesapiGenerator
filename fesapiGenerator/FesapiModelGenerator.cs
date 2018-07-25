@@ -2197,7 +2197,6 @@ namespace fesapiGenerator
             return getter;
         }
 
-
         #endregion
 
         #region relations
@@ -2308,7 +2307,7 @@ namespace fesapiGenerator
                     Tool.log(repository, "- Resqml 2.0.1 code: " + newResqml2_0_1Path);
                     Tool.log(repository, "- Resqml 2.2 code: " + newResqml2_2Path);
 
-                    addResqml2Getter(fesapiClass, getterName + energisticsResqml2_0_1Attribute.Name, newResqml2_0_1Path, newResqml2_2Path);
+                    addResqml2Getter(fesapiClass, energisticsResqml2_0_1Attribute, energisticsResqml2_2Attribute, getterName + energisticsResqml2_0_1Attribute.Name, newResqml2_0_1Path, newResqml2_2Path);
                 }
                 else
                 {
@@ -2317,11 +2316,11 @@ namespace fesapiGenerator
                     EA.Element fesapiResqml2_0_1Class = fesapiResqml2_0_1ClassList.Find(c => c.Name.Equals(fesapiClass.Name));
                     if (fesapiResqml2_0_1Class != null)
                     {
-                        addResqmlGetter(fesapiResqml2_0_1Class, getterName + energisticsResqml2_0_1Attribute.Name, newResqml2_0_1Path);
+                        addResqmlGetter(fesapiResqml2_0_1Class, energisticsResqml2_0_1Attribute, getterName + energisticsResqml2_0_1Attribute.Name, newResqml2_0_1Path);
                     }
                     else
                     {
-                        addResqmlGetter(fesapiClass, getterName + energisticsResqml2_0_1Attribute.Name, newResqml2_0_1Path);
+                        addResqmlGetter(fesapiClass, energisticsResqml2_0_1Attribute, getterName + energisticsResqml2_0_1Attribute.Name, newResqml2_0_1Path);
                     }
                 }
             }
@@ -2363,11 +2362,11 @@ namespace fesapiGenerator
                     EA.Element fesapiResqml2_2Class = fesapiResqml2_2ClassList.Find(c => c.Name.Equals(fesapiClass.Name));
                     if (fesapiResqml2_2Class != null)
                     {
-                        addResqmlGetter(fesapiResqml2_2Class, getterName + energisticsResqml2_2Attribute.Name, newResqml2_2Path);
+                        addResqmlGetter(fesapiResqml2_2Class, energisticsResqml2_2Attribute, getterName + energisticsResqml2_2Attribute.Name, newResqml2_2Path);
                     }
                     else
                     {
-                        addResqmlGetter(fesapiClass, getterName + energisticsResqml2_2Attribute.Name, newResqml2_2Path);
+                        addResqmlGetter(fesapiClass, energisticsResqml2_2Attribute, getterName + energisticsResqml2_2Attribute.Name, newResqml2_2Path);
                     }
                 }
             }
@@ -2719,7 +2718,7 @@ namespace fesapiGenerator
                     newPath = path + "->" + attribute.Name;
                 }
 
-                addResqmlGetter(fesapiClass, getterName + attribute.Name, newPath);
+                addResqmlGetter(fesapiClass, attribute, getterName + attribute.Name, newPath);
             }
 
             foreach (EA.Connector connector in energisticsClass.Connectors)
@@ -2763,61 +2762,23 @@ namespace fesapiGenerator
             }
         }
 
-        EA.Method addResqml2Getter(EA.Element fesapiClass, string getterName, string resqml2_0_1Path, string resqml2_2Path)
-        {
-            Tool.log(repository, "adding a resqml2 getter: " + getterName);
-            
-            EA.Method getter = fesapiClass.Methods.AddNew(getterName, "void");
-            getter.Code = "if (gsoapProxy2_0_1 != nullptr)\n";
-            getter.Code += "{\n";
-            //getter.Code += "\t return " + resqml2_0_1Path + ";\n"; 
-            getter.Code += test(resqml2_0_1Path, 1) + "\n";
-            getter.Code += "}\n";
-            getter.Code += "else if (gsoapProxy2_2 != nullptr)\n";
-            getter.Code += "{\n";
-            //getter.Code += "\t return " + resqml2_2Path + ";\n";
-            getter.Code += test(resqml2_2Path, 1) + "\n";
-            getter.Code += "}\n";
-            getter.Code += "else\n";
-            getter.Code += "{\n";
-            getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
-            getter.Code += "}";
-
-            getter.Stereotype = "const";
-            if (!(getter.Update()))
-            {
-                Tool.showMessageBox(repository, getter.GetLastError());
-                return null;
-            }
-            fesapiClass.Methods.Refresh();
-
-            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
-            if (!(bodyLocationTag.Update()))
-            {
-                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
-                return null;
-            }
-            getter.TaggedValues.Refresh();
-
-            return getter;
-        }
-
-        // code tiré de https://codereview.stackexchange.com/questions/85357/counting-occurrences-of-substring-in-string
-        public static int CountStringOccurrences(string text, char pattern)
+        // code tiré de https://www.dotnetperls.com/string-occurrence
+        public static int countStringOccurrences(string text, string pattern)
         {
             // Loop through all instances of the string 'text'.
             int count = 0;
             int i = 0;
             while ((i = text.IndexOf(pattern, i)) != -1)
             {
-                i += 1;
+                i += pattern.Length;
                 count++;
             }
             return count;
         }
 
+
         // code tiré de https://stackoverflow.com/questions/2571716/find-nth-occurrence-of-a-character-in-a-string
-        public int GetNthIndex(string s, char t, int n)
+        public int getNthIndex(string s, char t, int n)
         {
             int count = 0;
             for (int i = 0; i < s.Length; i++)
@@ -2835,7 +2796,7 @@ namespace fesapiGenerator
         }
 
         // code tiré de https://code.i-harness.com/en/q/2d91d
-        private int IndexOfOccurence(string s, string match, int occurence)
+        private int indexOfOccurence(string s, string match, int occurence)
         {
             int i = 1;
             int index = 0;
@@ -2851,19 +2812,24 @@ namespace fesapiGenerator
             return -1;
         }
 
-        string secureExpressionRec(string expression, int indexOccurence, int pointerOccurence)
+        string secureExpression(string expression)
+        {
+            return secureExpressionRec(expression, 1, 1, "\t");
+        }
+
+        string secureExpressionRec(string expression, int indexOccurence, int pointerOccurence, string tabulation)
         {
             // on récupère la position du indexOccurence-ième "[index"
-            int indexPos = IndexOfOccurence(expression, "[index", indexOccurence);
+            int indexPos = indexOfOccurence(expression, "[index", indexOccurence);
 
             // on récupère la position du pointerOccurence-ième "(*"
-            int pointerPos = IndexOfOccurence(expression, "(*", pointerOccurence);
+            int pointerPos = indexOfOccurence(expression, "(*", pointerOccurence);
 
             if (indexPos == -1 && pointerPos == -1)
             {
-                return "return " + expression;
+                return tabulation + "return " + expression + "\n";
             }
-            else if (pointerPos<indexPos)
+            else if (indexPos == -1 || (pointerPos != -1 && pointerPos<indexPos))
             {
                 // on garde ce qui précède le "(*"
                 string prefix = expression.Substring(0, pointerPos);
@@ -2871,49 +2837,145 @@ namespace fesapiGenerator
                 // on garde ce qui suit le "(*"
                 string suffix = expression.Substring(pointerPos + 2);
 
-                // on extrait le nom de l'attribut pointé le nom de l'attribut pointé
-                string attribute = 
+                // on extrait le nom de l'attribut pointé
+                int firstClosingBracketPos = suffix.IndexOf(")");
+                string attributeName = suffix.Substring(0, firstClosingBracketPos);
+
+                // dans ce qui suit le "(*", on compte le nombre de parenthèses fermantes
+                // moins le nombre de parenthèse ouvrante
+                // moins 1 pour la parenthèse qui ferme celle du pointeur
+                int bracketsCount = countStringOccurrences(suffix, ')'.ToString()) - countStringOccurrences(suffix, '('.ToString()) - 1;
+
+                // dans le prefix, on compte la position de la bracketCount-ieme parenthèse ouvrante
+                int bracketPos = getNthIndex(prefix, '(', bracketsCount);
+
+                // je retire de prefix tout ce qui précède (inclue) la bracketCount-ieme parenthèse ouvrante
+                prefix = prefix.Remove(0, bracketPos + 1);
+
+                string res = "";
+                res += tabulation + "if (" + prefix + attributeName + "!= null)\n";
+                res += tabulation + "{\n";
+                res += secureExpressionRec(expression, indexOccurence, pointerOccurence + 1, tabulation + "\t");
+                res += tabulation + "}\n";
+                res += tabulation + "else\n";
+                res += tabulation + "{\n";
+                res += tabulation + "\tthrow out_of_range(\"The " + attributeName + " atribute is not defined\");\n";
+                res += tabulation + "}\n";
+
+                return res;
+            }
+            else
+            {
+                // on garde tout ce qui précède le "[index"
+                string prefix = expression.Substring(0, indexPos);
+
+                // on mémorise ce qui suit le "[index"
+                string suffix = expression.Substring(indexPos + 6);
+
+                // on y compte le nombre de parenthèses fermantes moins le nombre de parenthèse ouvrante
+                int bracketsCount = countStringOccurrences(suffix, ')'.ToString()) - countStringOccurrences(suffix, '('.ToString());
+
+                // on calcule la position de la bracketCount-ieme parenthèse ouvrante
+                int bracketPos = getNthIndex(prefix, '(', bracketsCount);
+
+                // je retire de res tout ce qui précède (inclue) la bracketCount-ieme parenthèse ouvrante
+                prefix = prefix.Remove(0, bracketPos + 1);
+
+                string res = "";
+                res += tabulation + "if (index" + (indexOccurence - 1) + " < " + prefix + ".size())\n";
+                res += tabulation + "{\n";
+                res += secureExpressionRec(expression, indexOccurence + 1, pointerOccurence, tabulation + "\t");
+                res += tabulation + "}\n";
+                res += tabulation + "else\n";
+                res += tabulation + "{\n";
+                res += tabulation + "\tthrow out_of_range(\"index" + (indexOccurence - 1) + " is out of range\");\n";
+                res += tabulation + "}\n";
+
+                return res;
+            }
+        }
+        
+        void addResqmlGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute, string getterName, string path)
+        {
+            ///// ATTENTION : parfois il va falloir que je chage le getterName (par exemple asString etc...) !!!
+            ///// ATTENTION : c'est a ce niveauq ue je vais devoir traiter les enum "ext" de resqml 2.2 
+
+            // get the fesapiClass package name for explciting log messages
+            string packageName = repository.GetPackageByID(fesapiClass.PackageID).Name;
+
+            // checking wether the attribute is mandatory
+            bool isMandatory = true;
+            if (energisticsAttribute.LowerBound.Equals("0"))
+            {
+                isMandatory = false;
+            }
+
+            // checking wether the attribute upper bound cardinality is 1
+            bool isSingle = true;
+            if (!(energisticsAttribute.UpperBound.Equals("1")))
+            {
+                isSingle = false;
+            }
+
+            string energisticsAttributeType = Tool.getBasicType(repository, energisticsAttribute);
+            // if the type of the attribute is a basic type
+            if (!(energisticsAttributeType.Equals("")))
+            {
+                if (addBasicTypeGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add basic type getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                    return;
+                }
+                // else if the type of the attribute is a measure type
+            }
+            else if (Tool.isMeasureType(repository.GetElementByID(energisticsAttribute.ClassifierID)))
+            {
+                if (addMeasureGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add measure value getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                    return;
+                }
+                if (addEnumGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add unit of measure getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                    return;
+                }
+                if (addEnumGetterAsString(fesapiClass, energisticsAttribute, isSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add string unit of measure getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                    return;
+                }
+            }
+            // else if the type of the attribute is an enum type
+            else if (Tool.isEnum(repository.GetElementByID(energisticsAttribute.ClassifierID)) || repository.GetElementByID(energisticsAttribute.ClassifierID).Name.EndsWith("Ext"))
+            {
+                if (addEnumGetter(fesapiClass, energisticsAttribute, isMandatory, isSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add enum value getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                    return;
+                }
+                if (addEnumGetterAsString(fesapiClass, energisticsAttribute, isSingle) == null)
+                {
+                    Tool.log(repository, "Unable to properly add string enum value getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                    return;
+                }
+            }
+            else
+            {
+                Tool.log(repository, "Unable to properly add getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                return;
+            }
+
+            if (!isSingle)
+            {
+                if (addCountGetter(fesapiClass, energisticsAttribute) == null)
+                {
+                    Tool.log(repository, "Unable to properly add count getter for the " + energisticsAttribute.Name + " attribute of the fesapi/Class Model/" + packageName + "/" + fesapiClass.Name + "!");
+                }
             }
         }
 
-        string test(string path, int i)
-        {
-            // il faut mixer avec les "(*"
-
-            // on récupère la i ème occurence de path
-            int lastIndexPos = IndexOfOccurence(path, "[index", i);
-
-            //// on récupère la postion du dernier "[index"
-            //int lastIndexPos = path.LastIndexOf("[index");
-
-            if (lastIndexPos == -1) return "return " + path;
-
-            // on garde tout ce qui précède le dernier "[index"
-            string res = path.Substring(0, lastIndexPos);
-
-            // on mémorise ce qui suit le dernier "[index" pour y compter le nombre de parenthèses fermantes
-            string afterLastIndex = path.Substring(lastIndexPos + 6);
-
-            // on y compte le nombre de parenthèses fermantes moins le nombre de parenthèse ouvrante
-            int bracketsCount = CountStringOccurrences(afterLastIndex, ')') - CountStringOccurrences(afterLastIndex, '(');
-
-            // on calcule la position de la bracketCount-ieme parenthèse ouvrante
-            int bracketPos = GetNthIndex(res, '(', bracketsCount);
-
-            // je retire de res tout ce qui précède (inclue) la bracketCount-ieme parenthèse ouvrante
-            res = res.Remove(0, bracketPos + 1);
-
-            res += ".size()";
-
-            return "if (index0 < " + res + ")\n{\n" + test(path, i + 1) + "\n}\nelse\n{\nthrow out_of_range(\"The index is out of range\");\n}\n";
-        }
-
-        
-
-
-
-
-        EA.Method addResqmlGetter(EA.Element fesapiClass, string getterName, string path)
+        EA.Method addResqmlGetter(EA.Element fesapiClass, EA.Attribute energisticsAttribute, string getterName, string path)
         {
             Tool.log(repository, "adding a resqml2_0_1/resqml2_2 getter: " + getterName);
 
@@ -2922,8 +2984,7 @@ namespace fesapiGenerator
             
             getter.Code = "if (gsoapProxyXXX != nullptr)\n";
             getter.Code += "{\n";
-            //getter.Code += "\t return " + path + ";\n";
-            getter.Code += test(path, 1) + "\n";
+            getter.Code += secureExpression(path);
             getter.Code += "}\n";
             getter.Code += "else\n";
             getter.Code += "{\n";
@@ -2937,6 +2998,93 @@ namespace fesapiGenerator
                 return null;
             }
             fesapiClass.Methods.Refresh();
+
+            int resqml2_0_1IndexCount = countStringOccurrences(path, "index");      
+            for (int i = 0; i < resqml2_0_1IndexCount; i++)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index" + i, "unsigned int &");
+                parameter.IsConst = true;
+                parameter.Position = i;
+
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+            }
+            getter.Parameters.Refresh();
+
+            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            getter.TaggedValues.Refresh();
+
+            return getter;
+        }
+
+        EA.Method addResqml2Getter(EA.Element fesapiClass, EA.Attribute energiticsResqml2_0_1Attribute, EA.Attribute energisticsResqml2_2Attribute, string getterName, string resqml2_0_1Path, string resqml2_2Path)
+        {
+            Tool.log(repository, "adding a resqml2 getter: " + getterName);
+
+            EA.Method getter = fesapiClass.Methods.AddNew(getterName, "void");
+            getter.Code = "if (gsoapProxy2_0_1 != nullptr)\n";
+            getter.Code += "{\n";
+            getter.Code += secureExpression(resqml2_0_1Path);
+            getter.Code += "}\n";
+            getter.Code += "else if (gsoapProxy2_2 != nullptr)\n";
+            getter.Code += "{\n";
+            getter.Code += secureExpression(resqml2_2Path);
+            getter.Code += "}\n";
+            getter.Code += "else\n";
+            getter.Code += "{\n";
+            getter.Code += "\tthrow logic_error(\"Not implemented yet\");\n";
+            getter.Code += "}";
+
+            getter.Stereotype = "const";
+            if (!(getter.Update()))
+            {
+                Tool.showMessageBox(repository, getter.GetLastError());
+                return null;
+            }
+            fesapiClass.Methods.Refresh();
+
+            int resqml2_0_1IndexCount = countStringOccurrences(resqml2_0_1Path, "index");
+            int resqml2_2IndexCount = countStringOccurrences(resqml2_2Path, "index");
+            int maxIndexCount = System.Math.Max(resqml2_0_1IndexCount, resqml2_2IndexCount);
+            int minIndexCount = System.Math.Min(resqml2_0_1IndexCount, resqml2_2IndexCount);
+            for (int i = 0; i < minIndexCount; i++)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index" + i, "unsigned int &");
+                parameter.IsConst = true;
+                parameter.Position = i;
+                    
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+
+                getter.Parameters.Refresh();
+            }
+
+            for (int i = minIndexCount; i < maxIndexCount; i++)
+            {
+                EA.Parameter parameter = getter.Parameters.AddNew("index" + i, "unsigned int &");
+                parameter.IsConst = true;
+                parameter.Default = "0";
+                parameter.Position = i;
+
+                if (!(parameter.Update()))
+                {
+                    Tool.showMessageBox(repository, parameter.GetLastError());
+                    return null;
+                }
+
+                getter.Parameters.Refresh();
+            }
 
             EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
             if (!(bodyLocationTag.Update()))
