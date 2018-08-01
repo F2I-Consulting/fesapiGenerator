@@ -268,6 +268,7 @@ namespace fesapiGenerator
                 Tool.log(repository, sourceClass.Name);
                 Tool.log(repository, "" + targetPackage.Elements.Count);
 
+                // TODO: vérifier que la classe recherchée existe bien dans fesapi
                 EA.Element targetClass = targetPackage.Elements.GetByName(sourceClass.Name);
                 if (targetClass != null)
                 {

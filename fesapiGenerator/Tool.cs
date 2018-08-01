@@ -336,7 +336,7 @@ namespace fesapiGenerator
                         {
                             list.Add(c);
                         }
-                    } 
+                    }
                 }
             }
 
@@ -499,21 +499,21 @@ namespace fesapiGenerator
         //TODO:use proxy generation mapping configuration
         static public string isBasicType(string type)
         {
-            if (type.Equals("int") || type.Equals("double") || type.Equals("long") || type.Equals("string"))
+            if (type.Equals("int") || type.Equals("double") || type.Equals("long"))
                 return type;
 
             if (type.Equals("integer"))
                 return "int";
 
-            
-            if (type.Equals("positiveInteger") || type.Equals("PositiveInteger") || type.Equals("nonNegativeInteger") || type.Equals("NonNegativeInteger") || type.Equals("positiveLong") || type.Equals("PositiveLong"))
+
+            if (type.Equals("positiveInteger") || type.Equals("PositiveInteger") || type.Equals("nonNegativeInteger") || type.Equals("NonNegativeInteger") || type.Equals("positiveLong") || type.Equals("PositiveLong") || type.Equals("nonNegativeLong") || type.Equals("NonNegativeLong"))
                 return "ULONG64";
 
             if (type.Equals("boolean"))
                 return "bool";
 
-            if (type.Equals("anyURI"))
-                return "string";
+            if (type.Equals("anyURI") || type.Equals("string") || type.Equals("DescriptionString"))
+                return "std::string";
 
             return "";
         }
@@ -533,14 +533,14 @@ namespace fesapiGenerator
 
             if (targetId == -1)
             {
-                return isBasicType(type.Genlinks.Replace("Parent=","").Replace(";",""));
+                return isBasicType(type.Genlinks.Replace("Parent=", "").Replace(";", ""));
             }
             else
             {
                 return isBasicTypeRec(repository, repository.GetElementByID(targetId));
             }
         }
-        
+
         static public string isBasicType(EA.Repository repository, EA.Element type)
         {
             if (!(type.Stereotype.Equals("XSDsimpleType") || type.StereotypeEx.Contains("XSDsimpleType")))
@@ -571,11 +571,12 @@ namespace fesapiGenerator
 
         static private string getGsoapNameRec(EA.Repository repository, EA.Element element, EA.Package package)
         {
+            //TODO: vérifier la règle, ici mes deux premiers if internes ne servent à rien
             if (package.Name.Equals("v2.0") && repository.GetPackageByID(package.ParentID).Name.Equals("common"))
             {
                 if (element.Type == "Class" && !(element.Name.Contains("Abstract")) && !(isEnum(element)))
                 {
-                    return "gsoap_resqml2_0_1::_eml20__" + element.Name;
+                    return "gsoap_resqml2_0_1::eml20__" + element.Name;
                 }
                 else
                 {
@@ -587,7 +588,7 @@ namespace fesapiGenerator
             {
                 if (element.Type == "Class" && !(element.Name.Contains("Abstract")) && !(isEnum(element)))
                 {
-                    return "gsoap_eml2_2::_eml22__" + element.Name;
+                    return "gsoap_eml2_2::eml22__" + element.Name;
                 }
                 else
                 {
@@ -622,7 +623,7 @@ namespace fesapiGenerator
             //// TODO: handle with exception
             //if (package.ParentID == 0)
             //    ...
-           
+
             return getGsoapNameRec(repository, element, repository.GetPackageByID(package.ParentID));
         }
 
@@ -725,8 +726,8 @@ namespace fesapiGenerator
                 {
                     EA.Element targetElement = repository.GetElementByID(currentConnector.SupplierID);
                     if (targetElement.Type.Equals("enumeration") ||
-                        targetElement.Type.Equals("Enumeration") || 
-                        targetElement.Stereotype.Equals("enumeration") || 
+                        targetElement.Type.Equals("Enumeration") ||
+                        targetElement.Stereotype.Equals("enumeration") ||
                         targetElement.Stereotype.Equals("Enumeration"))
                     {
                         return targetElement;
@@ -749,5 +750,54 @@ namespace fesapiGenerator
                 (card1 == "*" || card1 == "0..*") && (card2 == "*" || card2 == "0..*"));
         }
 
+        // code tiré de https://www.dotnetperls.com/string-occurrence
+        public static int countStringOccurrences(string text, string pattern)
+        {
+            // Loop through all instances of the string 'text'.
+            int count = 0;
+            int i = 0;
+            while ((i = text.IndexOf(pattern, i)) != -1)
+            {
+                i += pattern.Length;
+                count++;
+            }
+            return count;
+        }
+
+        // code tiré de https://stackoverflow.com/questions/2571716/find-nth-occurrence-of-a-character-in-a-string
+        public static int getNthIndex(string s, char t, int n)
+        {
+            int count = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == t)
+                {
+                    count++;
+                    if (count == n)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        // code tiré de https://code.i-harness.com/en/q/2d91d
+        public static int indexOfOccurence(string s, string match, int occurence)
+        {
+            int i = 1;
+            int index = 0;
+
+            while (i <= occurence && (index = s.IndexOf(match, index + 1)) != -1)
+            {
+                if (i == occurence)
+                    return index;
+
+                i++;
+            }
+
+            return -1;
+        }
     }
 }
+
