@@ -443,7 +443,7 @@ namespace fesapiGenerator
                 return proc.MainWindowHandle;
         }
 
-        static public string uppercaseFirstLetter(string s)
+        static public string upperCaseFirstLetter(string s)
         {
             if (string.IsNullOrEmpty(s))
             {
@@ -451,6 +451,16 @@ namespace fesapiGenerator
             }
 
             return char.ToUpper(s[0]) + s.Substring(1);
+        }
+
+        static public string lowerCaseFirstLetter(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return string.Empty;
+            }
+
+            return char.ToLower(s[0]) + s.Substring(1);
         }
 
         //TODO: for the time being we consider that two methods are equal iff they have the same name
@@ -483,7 +493,6 @@ namespace fesapiGenerator
             return true;
         }
 
-
         static public bool isMeasureType(EA.Element type)
         {
             if (type == null || type.BaseClasses.Count != 1)
@@ -505,7 +514,6 @@ namespace fesapiGenerator
             if (type.Equals("integer"))
                 return "int";
 
-
             if (type.Equals("positiveInteger") || type.Equals("PositiveInteger") || type.Equals("nonNegativeInteger") || type.Equals("NonNegativeInteger") || type.Equals("positiveLong") || type.Equals("PositiveLong") || type.Equals("nonNegativeLong") || type.Equals("NonNegativeLong"))
                 return "ULONG64";
 
@@ -514,6 +522,9 @@ namespace fesapiGenerator
 
             if (type.Equals("anyURI") || type.Equals("string") || type.Equals("DescriptionString"))
                 return "std::string";
+
+            if (type.Equals("dateTime"))
+                return "time_t";
 
             return "";
         }

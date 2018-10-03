@@ -265,30 +265,36 @@ namespace fesapiGenerator
         {
             foreach (EA.Element sourceClass in sourcePackage.Elements)
             {
-                Tool.log(repository, sourceClass.Name);
-                Tool.log(repository, "" + targetPackage.Elements.Count);
+                //Tool.log(repository, sourceClass.Name);
+                //Tool.log(repository, "" + targetPackage.Elements.Count);
 
-                // TODO: vérifier que la classe recherchée existe bien dans fesapi
-                EA.Element targetClass = targetPackage.Elements.GetByName(sourceClass.Name);
-                if (targetClass != null)
+                EA.Element targetClass = null;
+                try
                 {
-                    // handling notes
-                    if (sourceClass.Notes != "")
-                    {
-                        targetClass.Notes = sourceClass.Notes;
-                        if (!(targetClass.Update()))
-                        {
-                            Tool.showMessageBox(repository, targetClass.GetLastError());
-                            continue;
-                        }
-                    }
-
-                    // handling methods
-                    updateMethods(sourceClass, targetClass);
-
-                    // handling attributes
-                    updateAttributes(sourceClass, targetClass);
+                    targetClass = targetPackage.Elements.GetByName(sourceClass.Name);
                 }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    Tool.log(repository, "Model update warning: no " + sourceClass.Name + " have been found in fesapi/" + targetPackage.Name + "!");
+                    continue;
+                }
+
+                // handling notes
+                if (sourceClass.Notes != "")
+                {
+                    targetClass.Notes = sourceClass.Notes;
+                    if (!(targetClass.Update()))
+                    {
+                        Tool.showMessageBox(repository, targetClass.GetLastError());
+                        continue;
+                    }
+                }
+
+                // handling methods
+                updateMethods(sourceClass, targetClass);
+
+                // handling attributes
+                updateAttributes(sourceClass, targetClass);
             }
         }
 

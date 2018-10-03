@@ -183,8 +183,14 @@ namespace fesapiGenerator
 
         /// <summary>
         /// Name of the class tag providing the #include directive pointing on the base class header
+        /// Only used in Energistics based methodology.
         /// </summary>
         public const string fesapiBaseClassIncludeTagName = "fesapiBaseClassIncludeTag";
+
+        /// <summary>
+        /// Name of the class tag providing the #include directives to handle friend methods
+        /// </summary>
+        public const string fesapiIncludeTag = "fesapiIncludeTag";
 
         /// <summary>
         /// Name of the class tag telling that we should or should not generate an XML_TAG attribute with
