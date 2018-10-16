@@ -18,6 +18,7 @@ under the License.
 -----------------------------------------------------------------------*/
 using System.Collections.Generic;
 using System.Xml;
+using System;
 
 namespace fesapiGenerator
 {
@@ -97,6 +98,16 @@ namespace fesapiGenerator
         /// </summary>
         private SortedList<int, SortedSet<int>> backwardRelationSet = null;
 
+        /// <summary>
+        /// A list associating fesapi classes to getAllSourceRelationships code if exists
+        /// </summary>
+        private SortedList<int, string> fesapiClass2AllSourceRelationShipsMethod = null;
+
+        /// <summary>
+        /// A list associating fesapi classes to getAllTargetRelationships is exists
+        /// </summary>
+        private SortedList<int, string> fesapiClass2AllTargetRelationShipsMethod = null;
+
         #endregion
 
         #region constructor
@@ -126,6 +137,9 @@ namespace fesapiGenerator
             fesapiResqml2_2toEnergisticsResqml2_2 = new Dictionary<EA.Element, EA.Element>();
 
             backwardRelationSet = new SortedList<int, SortedSet<int>>();
+
+            fesapiClass2AllSourceRelationShipsMethod = new SortedList<int, string>();
+            fesapiClass2AllTargetRelationShipsMethod = new SortedList<int, string>();  
         }
 
         #endregion
@@ -288,6 +302,10 @@ namespace fesapiGenerator
                     exploreModel(fesapiResqml2_2Class, energisticsResqml2_2Class);
                 }
             }
+
+            // generating getAllSourceRelationships and getAllTargetRelationships methods
+            addAllSourceRelationshipsGetterSet();
+            addAllTargetRelationshipsGetterSet();
 
             // make sure the model view is up to date in the Enterprise Architect GUI
             repository.RefreshModelView(0);
@@ -2209,27 +2227,37 @@ namespace fesapiGenerator
             EA.Element energisticsResqml2_2SourceClass,
             string resqml2_0_1AttributeAccessExpression,
             string resqml2_2AttributeAccessExpression,
-            string unprefixedMethodName)
+            string relationName)
         {
             string fesapiSourceClassPackageName = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
             string fesapiDestClassPackageName = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
-
-            // *******************************************************
-            // adding backward relation attribute in destination class       
 
             if (!backwardRelationSet.ContainsKey(fesapiDestClass.ElementID))
             {
                 backwardRelationSet.Add(fesapiDestClass.ElementID, new SortedSet<int>());
             }
 
+            if (!fesapiClass2AllSourceRelationShipsMethod.ContainsKey(fesapiDestClass.ElementID))
+            {
+                fesapiClass2AllSourceRelationShipsMethod.Add(fesapiDestClass.ElementID, "");
+            }
+
             if (!backwardRelationSet[fesapiDestClass.ElementID].Contains(fesapiSourceClass.ElementID))
             {
+                // *******************************************************
+                // adding backward relation attribute in destination class
+
                 if (addBackwardRelationAttribute(fesapiSourceClass, fesapiDestClass) == null)
                 {
                     Tool.log(repository, "Unable to properly add backward relation attribute from " + fesapiDestClassPackageName + "/" + fesapiDestClass.Name + " to " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + "!");
                     return;
                 }
                 backwardRelationSet[fesapiDestClass.ElementID].Add(fesapiSourceClass.ElementID);
+                
+                // *********************************************************
+                // Updating all source relationships getters in destination class
+
+                appendAllSourceRelationshipsGetterCode(fesapiSourceClass, fesapiDestClass);
 
                 // ***********************************
                 // Adding backward relation getter set
@@ -2257,13 +2285,14 @@ namespace fesapiGenerator
                     Tool.log(repository, "Unable to properly add backward relation getter fom " + fesapiDestClassPackageName + "/" + fesapiDestClass.Name + " to " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + "!");
                     return;
                 }
+
             }
 
             // ************************************************
             // Adding forward relation setter in source class
             // together with friend setter in destination class
 
-            if (addRelationSetter(fesapiSourceClass, fesapiDestClass, energisticsResqml2_0_1SourceClass, energisticsResqml2_2SourceClass, "set" + Tool.upperCaseFirstLetter(unprefixedMethodName)) == null)
+            if (addRelationSetter(fesapiSourceClass, fesapiDestClass, energisticsResqml2_0_1SourceClass, energisticsResqml2_2SourceClass, "set" + Tool.upperCaseFirstLetter(relationName)) == null)
             {
                 Tool.log(repository, "Unable to properly add forward relation setter from " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + " to " + fesapiDestClassPackageName + "/" + fesapiDestClass + "!");
                 return;
@@ -2272,7 +2301,7 @@ namespace fesapiGenerator
             // **************************************************
             // Adding XML forward relation setter in source class
 
-            if (addXmlRelationSetter(fesapiSourceClass, fesapiDestClass, resqml2_0_1AttributeAccessExpression, resqml2_2AttributeAccessExpression, "set" + Tool.upperCaseFirstLetter(unprefixedMethodName) + "InXml") == null)
+            if (addXmlRelationSetter(fesapiSourceClass, fesapiDestClass, resqml2_0_1AttributeAccessExpression, resqml2_2AttributeAccessExpression, "set" + Tool.upperCaseFirstLetter(relationName) + "InXml") == null)
             {
                 Tool.log(repository, "Unable to properly add XML forward relation setter from " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + " to " + fesapiDestClassPackageName + "/" + fesapiDestClass + "!");
                 return;
@@ -2280,7 +2309,7 @@ namespace fesapiGenerator
 
             // ***************************************************
             // Adding destination class DOR getter in source class
-            if (addDestClassDORGetter(fesapiSourceClass, resqml2_0_1AttributeAccessExpression, resqml2_2AttributeAccessExpression, "get" + Tool.upperCaseFirstLetter(unprefixedMethodName) + "Dor") == null)
+            if (addDestClassDORGetter(fesapiSourceClass, resqml2_0_1AttributeAccessExpression, resqml2_2AttributeAccessExpression, "get" + Tool.upperCaseFirstLetter(relationName) + "Dor") == null)
             {
                 Tool.log(repository, "Unable to properly add forward relation DOR getter from " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + " to " + fesapiDestClassPackageName + "/" + fesapiDestClass + "!");
                 return;
@@ -2288,7 +2317,7 @@ namespace fesapiGenerator
             
             // ****************************************************
             // Adding destination class UUID getter in source class
-            if (addDestClassUuidGetter(fesapiSourceClass, "get" + Tool.upperCaseFirstLetter(unprefixedMethodName) + "Uuid") == null)
+            if (addDestClassUuidGetter(fesapiSourceClass, "get" + Tool.upperCaseFirstLetter(relationName) + "Uuid") == null)
             {
                 Tool.log(repository, "Unable to properly add forward relation UUID getter from " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + " to " + fesapiDestClassPackageName + "/" + fesapiDestClass + "!");
                 return;
@@ -2297,7 +2326,7 @@ namespace fesapiGenerator
             // ***********************************************
             // Adding destination class getter in source class
 
-            if (addDestClassGetter(fesapiSourceClass, fesapiDestClass, "get" + Tool.upperCaseFirstLetter(unprefixedMethodName)) == null)
+            if (addDestClassGetter(fesapiSourceClass, fesapiDestClass, "get" + Tool.upperCaseFirstLetter(relationName)) == null)
             {
                 Tool.log(repository, "Unable to properly add forward relation getter from " + fesapiSourceClassPackageName + "/" + fesapiSourceClass.Name + " to " + fesapiDestClassPackageName + "/" + fesapiDestClass + "!");
                 return;
@@ -2307,191 +2336,31 @@ namespace fesapiGenerator
             // Adding required include directive to handle friend setter in destination class
 
             addOrUpdateFesapiIncludeTag(fesapiDestClass, "#include \"" + repository.GetPackageByID(fesapiSourceClass.PackageID).Name + "/" + fesapiSourceClass.Name + ".h\";");
-
-            //EA.TaggedValue fesapiBackwardIncludeTag = fesapiDestClass.TaggedValues.GetByName(Constants.fesapiIncludeTag);
-
-            //if (fesapiBackwardIncludeTag == null)
-            //{
-            //    fesapiBackwardIncludeTag = fesapiDestClass.TaggedValues.AddNew(Constants.fesapiIncludeTag, "");
-            //}
-
-            //fesapiBackwardIncludeTag.Value += "#include \"" + fesapiSourceClassNamespace + "/" + fesapiSourceClass.Name + ".h\";";
-            //if (!fesapiBackwardIncludeTag.Update())
-            //{
-            //    Tool.showMessageBox(repository, fesapiBackwardIncludeTag.GetLastError());
-            //}
-
+            
             // *************************************************
             // Adding required include directive in source class
 
             addOrUpdateFesapiIncludeTag(fesapiSourceClass, "#include \"" + repository.GetPackageByID(fesapiDestClass.PackageID).Name + "/" + fesapiDestClass.Name + ".h\";");
 
-            //EA.TaggedValue fesapiForwardIncludeTag = fesapiSourceClass.TaggedValues.GetByName(Constants.fesapiIncludeTag);
+            // *********************************************************
+            // Updating all target relationships getters in source class
 
-            //if (fesapiForwardIncludeTag == null)
-            //{
-            //    fesapiForwardIncludeTag = fesapiSourceClass.TaggedValues.AddNew(Constants.fesapiIncludeTag, "");
-            //}
+            if (!fesapiClass2AllTargetRelationShipsMethod.ContainsKey(fesapiSourceClass.ElementID))
+            {
+                fesapiClass2AllTargetRelationShipsMethod.Add(fesapiSourceClass.ElementID, "");
+            }
+            appendAllTargetRelationshipsGetterCode(fesapiSourceClass, fesapiDestClass, relationName);
 
-            //fesapiForwardIncludeTag.Value += "#include \"" + fesapiDestClassNamespace + "/" + fesapiDestClass.Name + ".h\";";
-            //if (!fesapiForwardIncludeTag.Update())
-            //{
-            //    Tool.showMessageBox(repository, fesapiForwardIncludeTag.GetLastError());
-            //}
         }
 
-        EA.Attribute addBackwardRelationAttribute(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
-        {
-            string backRelAttName = Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set";
-
-            string fesapiNameSsace = "";
-            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
-            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
-            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
-            {
-                fesapiNameSsace = fesapiSourceClassNamespace + "::";
-            }
-
-            string backRelAttType = "std::vector<" + fesapiNameSsace + fesapiSourceClass.Name + "*>";
-            EA.Attribute backRelAtt = fesapiDestClass.Attributes.AddNew(backRelAttName, backRelAttType);
-            backRelAtt.Visibility = "Protected";
-            if (!(backRelAtt.Update()))
-            {
-                Tool.showMessageBox(repository, backRelAtt.GetLastError());
-                return null;
-            }
-            fesapiDestClass.Attributes.Refresh();
-
-            Tool.log(repository, backRelAttName + ":" + backRelAttType + " added to " + fesapiDestClass.Name);
-
-            return backRelAtt;
-        }
-
-        EA.Method addBackwardRelationSetGetter(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
-        {
-            string fesapiNameSsace = "";
-            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
-            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
-            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
-            {
-                fesapiNameSsace = fesapiSourceClassNamespace + "::";
-            }
-
-            EA.Method getter = fesapiDestClass.Methods.AddNew("get" + fesapiSourceClass.Name + "Set", "std::vector<" + fesapiNameSsace + fesapiSourceClass.Name + "*>");
-
-            getter.Visibility = "public";
-            getter.Stereotype = "const";
-
-            getter.Code = "return " + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set;";
-
-            if (!(getter.Update()))
-            {
-                Tool.showMessageBox(repository, getter.GetLastError());
-                return null;
-            }
-            fesapiSourceClass.Methods.Refresh();
-
-            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
-            if (!(bodyLocationTag.Update()))
-            {
-                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
-                return null;
-            }
-            getter.TaggedValues.Refresh();
-
-            return getter;
-        }
-
-        EA.Method addBackwardRelationSetCountGetter(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
-        {
-            string fesapiNameSpace = "";
-            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
-            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
-            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
-            {
-                fesapiNameSpace = fesapiSourceClassNamespace + "::";
-            }
-
-            EA.Method getter = fesapiDestClass.Methods.AddNew("get" + fesapiSourceClass.Name + "Count", "unsigned int");
-
-            getter.Visibility = "public";
-            getter.Stereotype = "const";
-
-            getter.Code = "return " + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set.size();";
-
-            if (!(getter.Update()))
-            {
-                Tool.showMessageBox(repository, getter.GetLastError());
-                return null;
-            }
-            fesapiSourceClass.Methods.Refresh();
-
-            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
-            if (!(bodyLocationTag.Update()))
-            {
-                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
-                return null;
-            }
-            getter.TaggedValues.Refresh();
-
-            return getter;
-        }
-
-        EA.Method addBackwardRelationGetter(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
-        {
-            string fesapiNameSpace = "";
-            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
-            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
-            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
-            {
-                fesapiNameSpace = fesapiSourceClassNamespace + "::";
-            }
-
-            EA.Method getter = fesapiDestClass.Methods.AddNew("get" + fesapiSourceClass.Name + "", fesapiNameSpace + fesapiSourceClass.Name + "*");
-
-            getter.Visibility = "public";
-            getter.Stereotype = "const";
-
-            getter.Code = "if (" + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set.size() > index) {\n";
-            getter.Code += "\treturn " + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set[index];\n";
-            getter.Code += "}\n";
-            getter.Code += "else\n";
-            getter.Code += "{\n";
-            getter.Code += "\tthrow range_error(\"The index is out of the range of the set of " + fesapiSourceClass.Name +".\");\n";
-            getter.Code += "}\n";
-
-            if (!(getter.Update()))
-            {
-                Tool.showMessageBox(repository, getter.GetLastError());
-                return null;
-            }
-            fesapiSourceClass.Methods.Refresh();
-
-            EA.Parameter parameter = getter.Parameters.AddNew("index", "const unsigned int &");
-            if (!(parameter.Update()))
-            {
-                Tool.showMessageBox(repository, parameter.GetLastError());
-                return null;
-            }
-            getter.Parameters.Refresh();
-
-            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
-            if (!(bodyLocationTag.Update()))
-            {
-                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
-                return null;
-            }
-            getter.TaggedValues.Refresh();
-
-            return getter;
-        }
+        #region forward
 
         // TODO: commenter le fait que la friend est également générée
         EA.Method addRelationSetter(
-            EA.Element fesapiSourceClass, 
-            EA.Element fesapiDestClass, 
-            EA.Element energisticsResqml2_0_1SourceClass, 
-            EA.Element energisticsResqml2_2SourceClass, 
+            EA.Element fesapiSourceClass,
+            EA.Element fesapiDestClass,
+            EA.Element energisticsResqml2_0_1SourceClass,
+            EA.Element energisticsResqml2_2SourceClass,
             string setterName)
         {
             // *********************************
@@ -2597,7 +2466,7 @@ namespace fesapiGenerator
 
         EA.Method addXmlRelationSetter(
             EA.Element fesapiSourceClass,
-            EA.Element fesapiDestClass, 
+            EA.Element fesapiDestClass,
             string resqml2_0_1AttributeAccessExpression,
             string resqml2_2AttributeAccessExpression,
             string setterName)
@@ -2767,7 +2636,7 @@ namespace fesapiGenerator
             getter.Visibility = "public";
             getter.Stereotype = "const";
 
-            getter.Code = "return " + getterName.Replace("Uuid", "Dor") + "()->Uuid;";
+            getter.Code = "return " + getterName.Replace("Uuid", "Dor") + "()->UUID;";
 
             if (!(getter.Update()))
             {
@@ -2824,6 +2693,261 @@ namespace fesapiGenerator
 
             return getter;
         }
+
+        void appendAllTargetRelationshipsGetterCode(EA.Element fesapiSourceClass, EA.Element fesapiDestClass, string relationName)
+        {
+            int srcId = fesapiSourceClass.ElementID;
+
+            string fesapiNameSpace = "";
+            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
+            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
+            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
+            {
+                fesapiNameSpace = fesapiDestClassNamespace + "::";
+            }
+
+            fesapiClass2AllTargetRelationShipsMethod[srcId] += fesapiNameSpace + fesapiDestClass.Name + "* " + relationName + " = get" + Tool.upperCaseFirstLetter(relationName) + "();\n";
+            fesapiClass2AllTargetRelationShipsMethod[srcId] += "Relationship rel(" + relationName + "->getPartNameInEpcDocument(), \"\", " + relationName + "->getUuid());\n";
+            fesapiClass2AllTargetRelationShipsMethod[srcId] += "rel.setDestinationObjectType();\n";
+            fesapiClass2AllTargetRelationShipsMethod[srcId] += "result.push_back(rel);\n\n";
+        }
+
+        void addAllTargetRelationshipsGetterSet()
+        {
+            foreach (int fesapiSourceClassID in fesapiClass2AllTargetRelationShipsMethod.Keys)
+            {
+                EA.Element fesapiSourceClass = repository.GetElementByID(fesapiSourceClassID);
+
+                EA.Method getter = fesapiSourceClass.Methods.AddNew(Constants.getAllTargetRelationshipsMethodName, "std::vector<epc::Relationship>");
+
+                getter.Visibility = "public";
+                getter.Stereotype = "const";
+                getter.Abstract = true;
+
+                getter.Code = "vector<Relationship> result;\n\n";
+                getter.Code += fesapiClass2AllTargetRelationShipsMethod[fesapiSourceClassID];
+                getter.Code += "return result;";
+
+                if (!(getter.Update()))
+                {
+                    Tool.showMessageBox(repository, getter.GetLastError());
+                    return;
+                }
+                fesapiSourceClass.Methods.Refresh();
+
+                EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+                if (!(bodyLocationTag.Update()))
+                {
+                    Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                    return;
+                }
+                getter.TaggedValues.Refresh();
+            }
+        }
+
+        #endregion
+
+        #region backward
+
+        EA.Attribute addBackwardRelationAttribute(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
+        {
+            string backRelAttName = Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set";
+
+            string fesapiNameSpace = "";
+            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
+            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
+            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
+            {
+                fesapiNameSpace = fesapiSourceClassNamespace + "::";
+            }
+
+            string backRelAttType = "std::vector<" + fesapiNameSpace + fesapiSourceClass.Name + "*>";
+            EA.Attribute backRelAtt = fesapiDestClass.Attributes.AddNew(backRelAttName, backRelAttType);
+            backRelAtt.Visibility = "Protected";
+            if (!(backRelAtt.Update()))
+            {
+                Tool.showMessageBox(repository, backRelAtt.GetLastError());
+                return null;
+            }
+            fesapiDestClass.Attributes.Refresh();
+
+            Tool.log(repository, backRelAttName + ":" + backRelAttType + " added to " + fesapiDestClass.Name);
+
+            return backRelAtt;
+        }
+
+        EA.Method addBackwardRelationSetGetter(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
+        {
+            string fesapiNameSpace = "";
+            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
+            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
+            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
+            {
+                fesapiNameSpace = fesapiSourceClassNamespace + "::";
+            }
+
+            EA.Method getter = fesapiDestClass.Methods.AddNew("get" + fesapiSourceClass.Name + "Set", "std::vector<" + fesapiNameSpace + fesapiSourceClass.Name + "*>");
+
+            getter.Visibility = "public";
+            getter.Stereotype = "const";
+
+            getter.Code = "return " + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set;";
+
+            if (!(getter.Update()))
+            {
+                Tool.showMessageBox(repository, getter.GetLastError());
+                return null;
+            }
+            fesapiSourceClass.Methods.Refresh();
+
+            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            getter.TaggedValues.Refresh();
+
+            return getter;
+        }
+
+        EA.Method addBackwardRelationSetCountGetter(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
+        {
+            string fesapiNameSpace = "";
+            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
+            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
+            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
+            {
+                fesapiNameSpace = fesapiSourceClassNamespace + "::";
+            }
+
+            EA.Method getter = fesapiDestClass.Methods.AddNew("get" + fesapiSourceClass.Name + "Count", "unsigned int");
+
+            getter.Visibility = "public";
+            getter.Stereotype = "const";
+
+            getter.Code = "return " + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set.size();";
+
+            if (!(getter.Update()))
+            {
+                Tool.showMessageBox(repository, getter.GetLastError());
+                return null;
+            }
+            fesapiSourceClass.Methods.Refresh();
+
+            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            getter.TaggedValues.Refresh();
+
+            return getter;
+        }
+
+        EA.Method addBackwardRelationGetter(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
+        {
+            string fesapiNameSpace = "";
+            string fesapiSourceClassNamespace = repository.GetPackageByID(fesapiSourceClass.PackageID).Name;
+            string fesapiDestClassNamespace = repository.GetPackageByID(fesapiDestClass.PackageID).Name;
+            if (fesapiSourceClassNamespace != fesapiDestClassNamespace)
+            {
+                fesapiNameSpace = fesapiSourceClassNamespace + "::";
+            }
+
+            EA.Method getter = fesapiDestClass.Methods.AddNew("get" + fesapiSourceClass.Name + "", fesapiNameSpace + fesapiSourceClass.Name + "*");
+
+            getter.Visibility = "public";
+            getter.Stereotype = "const";
+
+            getter.Code = "if (" + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set.size() > index) {\n";
+            getter.Code += "\treturn " + Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set[index];\n";
+            getter.Code += "}\n";
+            getter.Code += "else\n";
+            getter.Code += "{\n";
+            getter.Code += "\tthrow range_error(\"The index is out of the range of the set of " + fesapiSourceClass.Name + ".\");\n";
+            getter.Code += "}\n";
+
+            if (!(getter.Update()))
+            {
+                Tool.showMessageBox(repository, getter.GetLastError());
+                return null;
+            }
+            fesapiSourceClass.Methods.Refresh();
+
+            EA.Parameter parameter = getter.Parameters.AddNew("index", "const unsigned int &");
+            if (!(parameter.Update()))
+            {
+                Tool.showMessageBox(repository, parameter.GetLastError());
+                return null;
+            }
+            getter.Parameters.Refresh();
+
+            EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+            if (!(bodyLocationTag.Update()))
+            {
+                Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                return null;
+            }
+            getter.TaggedValues.Refresh();
+
+            return getter;
+        }
+
+        void appendAllSourceRelationshipsGetterCode(EA.Element fesapiSourceClass, EA.Element fesapiDestClass)
+        {
+            int destId = fesapiDestClass.ElementID;
+
+            string backRelAttName = Tool.lowerCaseFirstLetter(fesapiSourceClass.Name) + "Set";
+
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "for (size_t i = 0; i < " + backRelAttName + ".size(); ++i)\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "{\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\tif (" + backRelAttName + "[i] != nullptr)\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\t{\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\t\tRelationship relRep(" + backRelAttName + "[i]->getPartNameInEpcDocument(), \"\", " + backRelAttName + "[i]->getUuid());\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\t\trelRep.setSourceObjectType();\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\t\tresult.push_back(relRep);\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\t}\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\telse\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "\t\tthrow domain_error(\"The " + fesapiSourceClass.Name + " associated to the " + fesapiDestClass.Name + " cannot be nullptr\");\n";
+            fesapiClass2AllSourceRelationShipsMethod[destId] += "}\n\n";
+        }
+
+        void addAllSourceRelationshipsGetterSet()
+        {
+            foreach (int fesapiDestClassID in fesapiClass2AllSourceRelationShipsMethod.Keys)
+            {
+                EA.Element fesapiDestClass = repository.GetElementByID(fesapiDestClassID);
+
+                EA.Method getter = fesapiDestClass.Methods.AddNew(Constants.getAllSourceRelationshipsMethodName, "std::vector<epc::Relationship>");
+
+                getter.Visibility = "public";
+                getter.Stereotype = "const";
+                getter.Abstract = true;
+
+                getter.Code = "vector<Relationship> result;\n\n";
+                getter.Code += fesapiClass2AllSourceRelationShipsMethod[fesapiDestClassID];
+                getter.Code += "return result;";
+
+                if (!(getter.Update()))
+                {
+                    Tool.showMessageBox(repository, getter.GetLastError());
+                    return;
+                }
+                fesapiDestClass.Methods.Refresh();
+
+                EA.MethodTag bodyLocationTag = getter.TaggedValues.AddNew("bodyLocation", "classBody");
+                if (!(bodyLocationTag.Update()))
+                {
+                    Tool.showMessageBox(repository, bodyLocationTag.GetLastError());
+                    return;
+                }
+                getter.TaggedValues.Refresh();
+            }
+        }
+
+        #endregion
 
         #endregion
 

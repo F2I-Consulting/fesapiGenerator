@@ -229,5 +229,9 @@ namespace fesapiGenerator
         /// user AppData\Roaming\ folder
         /// </summary>
         public const string configurationFilePath = "\\Sparx Systems\\EA\\fesapiGeneratorConfiguration.xml";
+
+        public const string getAllTargetRelationshipsMethodName = "getAllTargetRelationships";
+
+        public const string getAllSourceRelationshipsMethodName = "getAllSourceRelationships";
     }
 }
